@@ -1,0 +1,18 @@
+{
+  "source": "day-new/packages/design-workbench",
+  "localSource": "/Users/nicolaerusan/Projects/day-new-admin/packages/design-workbench",
+  "referencedTask": "01a076f2-f490-72e2-8f74-d9f486eeb287",
+  "extractedAt": "2026-09-29",
+  "note": "Source files copied without changing their implementation. Standalone packaging, integration docs, and tests added here. Not published; original UNLICENSED status retained.",
+  "sha256": {
+    "README.md": "d8f644c777d9b0514ccd83204f5a594febdeaeb307b989fb46689623862f8db4",
+    "package.json": "686a3b336e50adfe24e8d9e686c3d57085449ff10d1c50eacb4eb0569140c141",
+    "tsconfig.json": "49da9fd0b35acaca66e3ddeeaa9d0fa639bc90bb7e368bc37feb369789ec1b96",
+    "src/styles.css": "819b070eaa1e153dec7350c58f38cb7f0c790cb9ae487ab732f345bbbd3da0fd",
+    "src/model.ts": "db6ec3e05508b42c5c6ee152b5c7bdd409be859278d3ba412b0ba9ab45e855a8",
+    "src/contexts.tsx": "7d8d79d7b03f4a034d7070753aa32aa84385991a437aaa2b96d0a34a28fc0f29",
+    "src/workbench.tsx": "8e9d8b22b229c7b1f0df7c0cff1a79a453965f4cae321b511016352c0d1ae74e",
+    "src/index.ts": "0b39b4e142abe34e2f622db5bdcd159658ca91d9cae8bc831bca577b0f1eb361",
+    "src/controls.tsx": "d543a10d8c5c2288992a94650523fa8e360fe40ca186db90d554e5d3d5aa367c"
+  }
+}
