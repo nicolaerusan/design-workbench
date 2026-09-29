@@ -27,5 +27,4 @@ const root = createRoot(document.getElementById('root'));
 if (errors.length) root.render(React.createElement('pre', null, `Fix the catalog:\n${errors.join('\n')}`));
 else root.render(React.createElement(PreviewBoundary, null,
   location.pathname === '/' ? React.createElement(Workbench, { entries, project, projectId: project, basePath: '/' }) : React.createElement(Preview)));
-// Catalog and fixture edits invalidate this module, refreshing the preview.
-if (import.meta.hot) import.meta.hot.accept(() => location.reload());
+// Without an HMR acceptance boundary, Vite reloads the page on fixture edits.
