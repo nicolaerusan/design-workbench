@@ -2,14 +2,15 @@
 
 **A component workbench for designing with AI.** Explore ideas in browser panels, keep multiple directions for the same React component, compare them side by side, and refine them in the context of a real application.
 
-The vision is a new generation of React Storybook: Storybook underneath, a richer workspace for human–agent design iteration on top, and deep integration with [Pattern Garden](https://pattern.garden) for inspiration from a universal component library.
+The vision is a richer workspace for human–agent design iteration, inspired by component tools like Storybook, with deep integration with [Pattern Garden](https://pattern.garden) for inspiration from a universal component library. **Storybook is not required:** Design Workbench has its own catalog and preview runtime.
 
-> **Early development.** This repository currently ships `@design-workbench/react`, a working React catalog and comparison UI extracted from Day.new and used by HomeBase. The current implementation uses host-provided iframe preview routes; it does **not yet include Storybook**. Storybook integration, direct Pattern Garden library access, site-indexing requests, and built-in AI orchestration are planned.
+> **Early development.** `@design-workbench/react` provides the React catalog, comparison UI, and a standalone CLI. The workbench was extracted from Day.new and is used by HomeBase. The CLI runs client React previews through Vite; existing applications can still provide their own preview routes. The repository is private and the package has not been published to npm. Direct Pattern Garden library access, site-indexing requests, and built-in AI orchestration are planned.
 
 ## What works today
 
 | Capability | Current behavior |
 | --- | --- |
+| Setup CLI | `init` creates a runnable workbench, `scan` discovers exported component candidates, `add` generates editable fixtures, and `dev` starts the standalone preview server. |
 | Component catalog | Named components grouped by category; search by name, ID, group, or source path; Cmd/Ctrl+K focuses search. |
 | Multiple design directions | Each component can retain several named designs with stable IDs, descriptions, source paths, and references. Designs are registered in the project manifest. |
 | Side-by-side comparison | Compare all registered designs for one component using the same selected fixture state and viewport. |
@@ -24,7 +25,7 @@ The vision is a new generation of React Storybook: Storybook underneath, a riche
 | Adaptable interface | Native controls by default; optional host design-system controls, including shadcn adapters and navigation-preview wrappers. |
 | Responsive navigation | Resizable and collapsible desktop sidebar, saved sidebar width, and a mobile drawer with keyboard containment. |
 
-The current AI workflow uses an external coding agent: edit component source and the manifest, inspect the resulting previews, compare alternatives, and export feedback for another iteration. Live updates depend on the host development server. The package does not currently generate code, receive prompts, or automatically deliver feedback to an agent.
+The current AI workflow uses an external coding agent: edit component source and the manifest, inspect the resulting previews, compare alternatives, and export feedback for another iteration. Live updates come from the standalone runner or the host development server. The CLI scaffolds preview fixtures; it does not generate new component implementations, receive prompts, or automatically deliver feedback to an agent.
 
 ## The design loop
 
@@ -39,23 +40,80 @@ Selecting a design only changes the preview. It does not change application impo
 
 ## Getting started
 
-This repository is a library, not a standalone development server. You need a React host application to mount the workbench and render its preview routes.
+The intended published install is a development dependency with an executable:
+
+```sh
+# After the first npm release (not available yet):
+npm install --save-dev @design-workbench/react
+npx design-workbench init
+npx design-workbench add --all
+npx design-workbench dev
+```
+
+For a one-off start after publication, `npx @design-workbench/react init` will invoke the same executable. A pinned project dependency is the recommended ongoing workflow so a team's CLI version is recorded in its lockfile. The shorter unscoped `npx design-workbench` package name is not reserved or published by this project.
+
+### Try it now from this repository
 
 ```sh
 git clone https://github.com/nicolaerusan/design-workbench.git
 cd design-workbench
 npm ci
 npm test
-npm pack
+node cli/index.mjs dev --cwd examples/basic
 ```
 
-The repository is private for now, so cloning requires access. There is no npm registry release yet. Install the generated tarball in your host application:
+Open `http://127.0.0.1:7070`. The example includes an imported interactive component and two comparable design directions. Node 20.19+ or 22.12+ is required (Node 21 is excluded).
+
+To use it in another React project before the npm release:
 
 ```sh
-npm install /absolute/path/to/design-workbench/design-workbench-react-0.1.1.tgz
+# In this repository:
+npm pack
+
+# In your host project:
+npm install --save-dev /absolute/path/to/design-workbench/design-workbench-react-0.2.0.tgz
+npx design-workbench init
+npx design-workbench scan
+npx design-workbench add 'src/components/Button.tsx#Button'
+npx design-workbench dev
 ```
 
-React and React DOM 18.2 or 19 are peer dependencies. The package includes compiled ESM, TypeScript declarations, source, and CSS. Its `development` export points to TypeScript source; the default export points to compiled JavaScript. The source build requires TypeScript 5.7 or newer; the lockfile pins the development toolchain.
+React and React DOM 18.2 or 19 are peers. The package includes compiled ESM, TypeScript declarations, CSS, source, and the CLI. TypeScript and Vite are used by the CLI, not imported by the React UI. The `development` export points to TypeScript source; the default export is compiled JavaScript.
+
+### Bring in existing components
+
+`init` creates `.design-workbench/config.json`, a generated `inventory.json`, an editable `catalog.ts`, a working example in `previews/`, and an `AGENT.md` setup guide. It does not replace existing setup or modify application source.
+
+```sh
+# Limit discovery or use a monorepo package:
+npx design-workbench init --cwd apps/web --source src/components --source src/features
+
+# Refresh generated inventory after source changes:
+npx design-workbench scan --write
+
+# Create draft fixtures for every discovered candidate:
+npx design-workbench add --all
+```
+
+Discovery parses JavaScript/TypeScript syntax without executing source. It recognizes exported PascalCase functions, React component classes, and common `memo`/`forwardRef` wrappers. Default source directories are `src`, `app`, `components`, and `pages`. Tests, declarations, build output, dependencies, hidden directories, and symlinks are excluded. Existing story files are reported as context but not imported automatically. Barrel re-exports, custom higher-order components, and dynamic exports are not resolved.
+
+Generated fixtures import your real components with an editable `fixtureProps` object. **Review required props, providers, and side effects before opening them.** `add` preserves existing fixtures; `scan --write` only replaces generated inventory. Discovery does not prove that a fixture renders correctly or that the component is used in production.
+
+The standalone runner supports client-renderable React components, TypeScript path aliases, and CSS imports. Add your shared CSS and wrappers in `catalog.ts` or individual fixtures. It does not load the host's Vite configuration, framework plugins, or server runtime. Components requiring Next.js server features or other framework-specific behavior should use client fixtures or the host integration below. Files in a host `public/` directory are not served automatically.
+
+The dev server binds to `127.0.0.1` and defaults to port 7070 (`--port` changes it). It is a local development tool and executes your fixture imports. Keep setup files in version control so teammates and agents share the same fixtures.
+
+### Work with an AI agent
+
+Give your coding agent this request:
+
+> Read .design-workbench/AGENT.md and inventory.json. Review the discovered components, add preview fixtures for the useful ones, supply representative props and providers, and verify the previews in the browser. Preserve existing design directions and add new alternatives separately.
+
+`entry.designs` holds visual directions; `entry.variants` holds states. The fixture's `render(selection)` selects an implementation and its props. The generated guide explains context previews, reference provenance, and production evidence. The CLI works without a model API key; the agent runs in your existing editor or coding environment.
+
+### Embed in an existing application
+
+The React API remains available if your host already supplies preview routes, as Day.new and HomeBase do. This path uses the host's runtime and fixtures instead of the standalone server.
 
 ### Register and mount components
 
@@ -148,7 +206,7 @@ Register `checkout-form` and its `Ready` state first. Context `design` and `stat
 
 Pass `controls: WorkbenchControls` to use your own `Button`, `Input`, `Textarea`, and `Select`. An optional `NavigationPreview` wrapper can add a hover preview; the default is a plain navigation item. Keep adapter component identities stable outside render. Public types are exported from the package.
 
-Optional `coverage: CoverageItem[]` and `scopeNote` describe your component inventory. Coverage discovery belongs to the host; this package does not scan source files.
+Optional `coverage: CoverageItem[]` and `scopeNote` describe your component inventory. The React UI consumes host-provided coverage. The CLI discovers candidates, but does not label them as verified coverage.
 
 Manifest designs and references live in your project files. Browser-created notes are stored under `projectId/componentId/designId` and can be exported as JSON; there is no shared backend or automatic manifest writeback. Remote reference images are not loaded automatically. Drawing and screenshot annotations are planned possibilities, not implemented features.
 
@@ -194,8 +252,9 @@ These are product requirements, not available API methods. The library transport
 - [x] Support named designs, state selection, comparison, responsive previews, and composition contexts.
 - [x] Connect a second host application, HomeBase.
 - [x] Add a portable Pattern Garden reference adapter.
-- [ ] Integrate Storybook as the underlying story and preview runtime, mapping stories and states into the workbench model.
-- [ ] Add a runnable example app and document the Storybook adapter.
+- [x] Add npm-executable setup, component discovery, draft fixture generation, and a standalone preview server.
+- [x] Include a runnable example with real component imports.
+- [ ] Expand discovery and framework adapters based on real host projects. Storybook interoperability can be added later if useful.
 - [ ] Connect Pattern Garden universal-library search and reference retrieval.
 - [ ] Add site-indexing requests and status tracking.
 - [ ] Add agent-driven variant creation, durable iteration history, and feedback handoff.
@@ -210,10 +269,12 @@ npm test
 npm pack --dry-run
 ```
 
-`npm test` compiles the package and runs Node tests for standalone server rendering, selection and preview URLs, duplicate detection, and Pattern Garden reference URL safety. These are package checks, not browser interaction tests or end-to-end Storybook/Pattern Garden integration tests. GitHub Actions runs typechecking, tests, and a package dry run.
+`npm test` compiles the package and checks React rendering, selection URLs, catalog validation, Pattern Garden link safety, CLI argument handling, component discovery, preservation of authored fixtures, and standalone server routes. Browser interaction checks are currently manual. GitHub Actions runs typechecking, tests, and a package dry run; account billing must permit Actions jobs to start.
 
 | File | Purpose |
 | --- | --- |
+| `cli/` | Setup, syntax-based discovery, fixture generation, and the Vite preview runner. |
+| `examples/basic/` | Runnable project with imported components and comparable designs. |
 | `src/workbench.tsx` | Catalog UI, preview panels, navigation, references, and feedback. |
 | `src/model.ts` | Public data model, selection helpers, URLs, and catalog validation. |
 | `src/contexts.tsx` | Parent composition previews and reverse component relationships. |
@@ -226,4 +287,4 @@ This project began as the design catalog in Day.new. HomeBase is the first consu
 
 ## License and release status
 
-Intended for open-source release; private during initial development. The package retains its existing `UNLICENSED` designation until an open-source license is selected. No npm registry release has been made.
+Intended for open-source release; private during initial development. The package retains its existing `UNLICENSED` designation until an open-source license is selected. No npm registry release has been made. Before publishing: confirm npm scope ownership, choose a license, verify a clean tarball install, and then publish explicitly. Repository setup and local packaging do not publish to the registry.

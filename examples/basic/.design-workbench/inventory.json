@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "project": "design-workbench-example",
+  "sources": [
+    "src"
+  ],
+  "frameworks": [],
+  "components": [
+    {
+      "id": "src/Button.tsx#Button",
+      "file": "src/Button.tsx",
+      "exportName": "Button",
+      "name": "Button",
+      "status": "needs-review"
+    }
+  ],
+  "stories": [],
+  "limitations": [
+    "Candidates are exported PascalCase functions, classes, or memo/forwardRef wrappers; a candidate may not be a React component.",
+    "Barrel re-exports, dynamic exports, custom HOCs, and files outside the source directories are not resolved.",
+    "Required props, providers, styles, server dependencies, and actual production usage require review.",
+    "Discovery does not execute source code, create stories, or claim preview coverage."
+  ]
+}
