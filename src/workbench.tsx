@@ -1,7 +1,7 @@
 'use client';
 import { Kbd, KbdGroup } from './ui/kbd.tsx';
 import { DesignBenchMark } from './brand.tsx';
-import { PanelLeft, ExternalLink, RotateCcw, Link as LinkIcon, ChevronRight } from 'lucide-react';
+import { PanelLeft, ArrowUpRight, RotateCcw, Link2, ChevronRight } from 'lucide-react';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible.tsx';
 import { TooltipProvider } from './ui/tooltip.tsx';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -281,13 +281,13 @@ export function Workbench({
                     setCopyError('Could not copy. The preview URL is in your address bar.');
                   }
                 }}
-                variant="outline"
+                variant="ghost"
                 title="Copy a link to this preview. Local links require the same project running on your machine."
                 aria-live="polite"
               >
                 <WorkbenchIcon name="link" /> {copied ? 'Copied' : 'Share'}
               </Button>
-<a className="dw-open" href={previewUrl(basePath, entry, selection)} target="_blank" rel="noreferrer">Open preview <WorkbenchIcon name="external" /></a></div></div>
+<a className="dw-open" href={previewUrl(basePath, entry, selection)} target="_blank" rel="noreferrer">Preview <WorkbenchIcon name="external" /></a></div></div>
             <p>{entry.description}</p>
           </div>
 
@@ -548,6 +548,6 @@ function ReferencePanel({
 }
 
 function WorkbenchIcon({ name }: { name: 'panels' | 'external' | 'reset' | 'link' }) {
-  const Icon = { panels: PanelLeft, external: ExternalLink, reset: RotateCcw, link: LinkIcon }[name];
+  const Icon = { panels: PanelLeft, external: ArrowUpRight, reset: RotateCcw, link: Link2 }[name];
   return <Icon size={16} strokeWidth={1.65} aria-hidden="true" />;
 }
