@@ -283,3 +283,23 @@
 .dw-source-trigger[data-state=open] > svg { transform: rotate(90deg); }
 .dw-hover-preview.db-hover-card { position: relative; width: 344px; max-width: calc(100vw - 24px); max-height: var(--radix-hover-card-content-available-height); }
 .dw-workbench .db-select-trigger { justify-content: space-between; gap: 10px; }
+
+.dw-brand { gap: 10px; padding-bottom: 22px; }
+.dw-brand-mark { flex-shrink: 0; border: 0; background: transparent; border-radius: 0; width: 24px; height: 28px; }
+.dw-brand-mark svg { width: 24px; height: 24px; }
+.dw-project-name { min-width: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; line-height: 1.4; }
+.dw-nav { margin-top: 8px; }
+.dw-setup-link { display: flex; align-items: center; gap: 9px; flex-shrink: 0; min-height: 36px; padding: 8px 10px; margin-top: 8px; border-radius: 8px; font-size: 12px; }
+.dw-setup-link:hover, .dw-setup-link[aria-current] { background: #e9e9e5; }
+.dw-setup-content { overflow: auto; flex: 1; min-height: 0; padding: 12px 24px 32px; }
+.dw-setup-content .dw-setup-card { max-width: 620px; }
+.dw-setup-card h2 { font-size: 18px; font-weight: 500; margin: 0 0 8px; }
+.dw-setup-card h3 { font-size: 13px; font-weight: 600; margin: 0; }
+.dw-setup-card p { color: var(--dw-muted); font-size: 12px; line-height: 1.6; margin: 6px 0; }
+.dw-setup-card ol { list-style: none; padding: 0; margin: 24px 0; display: grid; gap: 20px; }
+.dw-setup-card li { margin: 0; padding: 0; }
+.dw-setup-card pre { margin: 7px 0; padding: 11px 14px; background: #f7f7f5; border: 1px solid var(--dw-line); border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.dw-setup-usage { padding-top: 18px; border-top: 1px solid var(--dw-line); }
+.dw-setup-card .dw-setup-note { margin: 18px 0; font-size: 11px; }
+.dw-setup { overflow: auto; }
+@media (max-width: 700px) { .dw-setup-content { padding-inline: 16px; } }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Workbench, SetupGuide, resolveSelection, validateCatalog } from '@design-workbench/react';
+import { Workbench, resolveSelection, validateCatalog } from '@design-workbench/react';
 import '@design-workbench/react/styles.css';
 import { entries, renderPreview, project, needsInit, setupCommand } from 'virtual:design-workbench';
 
@@ -42,5 +42,5 @@ const errors = validateCatalog(entries);
 const root = createRoot(document.getElementById('root'));
 if (errors.length) root.render(React.createElement('pre', null, `Fix the catalog:\n${errors.join('\n')}`));
 else root.render(React.createElement(PreviewBoundary, null,
-  location.pathname === '/' ? React.createElement(React.Fragment, null, React.createElement(ConnectionNotice), needsInit ? React.createElement(SetupGuide, { needsInit: true, command: setupCommand }) : React.createElement(Workbench, { entries, project, projectId: project, basePath: '/', setupCommand })) : React.createElement(Preview)));
+  location.pathname === '/' ? React.createElement(React.Fragment, null, React.createElement(ConnectionNotice), React.createElement(Workbench, { entries, project, projectId: project, basePath: '/', setupCommand, needsInit })) : React.createElement(Preview)));
 // Without an HMR acceptance boundary, Vite reloads the page on fixture edits.

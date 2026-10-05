@@ -234,6 +234,8 @@ Register `checkout-form` and its `Ready` state first. Context `design` and `stat
 
 `validateCatalog` checks stable component IDs, duplicates, missing states, design-ID collisions, context targets, self-links, context selections, and incomplete usage metadata. The host must verify that source evidence is accurate and that its fixtures visibly contain the child.
 
+**Setup** stays at the bottom of the project sidebar. It provides the run, scan, and add commands and a short usage guide. Empty catalogs open Setup automatically; projects without CLI configuration also show the init command. The Setup URL can be bookmarked, and browser Back returns to the previous component.
+
 The **Properties & states** inspector groups state presets and editable values beside the preview. Collapse it to gain canvas space, or use the docking buttons to stack it below the preview or place it on the right. Drag the divider vertically or horizontally to resize it; arrow keys adjust the focused divider, and double-click resets its size. Position, size, and collapsed state are remembered locally per project. Viewport and Reset live inside the inspector; Share sits beside the component name. Narrow panels automatically stack it below. Changing the layout preserves the running preview; changing a state preset clears property overrides. Edited presets show **Modified**.
 
 ### UI foundation

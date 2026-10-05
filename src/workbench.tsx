@@ -1,7 +1,7 @@
 'use client';
 import { Kbd, KbdGroup } from './ui/kbd.tsx';
 import { DesignBenchMark } from './brand.tsx';
-import { PanelLeft, ArrowUpRight, RotateCcw, Link2, ChevronRight } from 'lucide-react';
+import { PanelLeft, ArrowUpRight, RotateCcw, Link2, ChevronRight, BookOpen } from 'lucide-react';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible.tsx';
 import { TooltipProvider } from './ui/tooltip.tsx';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
@@ -32,6 +32,8 @@ export interface WorkbenchProps {
   scopeNote?: string;
   /** CLI can supply commands appropriate to its installation. */
   setupCommand?: string;
+  /** The standalone CLI has not created its project configuration yet. */
+  needsInit?: boolean;
 }
 export function Workbench({
   project,
@@ -43,6 +45,7 @@ export function Workbench({
   basePath,
   scopeNote,
   setupCommand,
+  needsInit = false,
 }: WorkbenchProps) {
   const { Button, Input } = controls;
   const NavigationPreview = controls.NavigationPreview ?? DefaultNavigationPreview;
@@ -81,6 +84,7 @@ export function Workbench({
     return () => window.clearTimeout(timer);
   }, [copied]);
   const [showCoverage, setShowCoverage] = useState(false);
+  const [page, setPage] = useState<'components' | 'setup'>(entries.length && !needsInit ? 'components' : 'setup');
   const [showNav, setShowNav] = useState(false);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -106,14 +110,17 @@ export function Workbench({
   }, [mobile, showNav]);
   useEffect(() => {
     const restore = () => {
-      setSelection(resolveSelection(entries, new URLSearchParams(window.location.search)));
+      const query = new URLSearchParams(window.location.search);
+      setSelection(resolveSelection(entries, query));
+      setPage(query.get('view') === 'setup' || !entries.length || needsInit ? 'setup' : 'components');
+      setShowCoverage(false);
       setCopied(false);
     };
     restore();
     setReady(true);
     window.addEventListener('popstate', restore);
     return () => window.removeEventListener('popstate', restore);
-  }, [entries]);
+  }, [entries, needsInit]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -126,14 +133,14 @@ export function Workbench({
     return () => window.removeEventListener('keydown', onKey);
   }, []);
   const entry = entries.find((item) => item.id === selection.component);
-  if (!entry)
-    return <SetupGuide command={setupCommand} />;
-  const designs = designsFor(entry);
+  const showingSetup = page === 'setup' || !entry || needsInit;
+  const designs = entry ? designsFor(entry) : [];
   const design = designs.find((item) => item.id === selection.design) ?? designs[0];
   const update = (patch: Partial<Selection>, replace = false) => {
     if (patch.component !== undefined || patch.state !== undefined) patch = { ...patch, props: '' };
     const next = resolveSelection(entries, new URLSearchParams({ ...selection, ...patch }));
     setSelection(next);
+    setPage('components');
     setReset(0);
     setCopied(false);
     setCopyError('');
@@ -146,7 +153,7 @@ export function Workbench({
       .includes(query.toLowerCase()),
   );
   const unpreviewed = coverage.filter((item) => item.status !== 'previewed');
-  const frame = (idea: DesignIdea) => (
+  const frame = (idea: DesignIdea) => entry && (
     <section className="dw-preview-card" key={idea.id}>
       {compare && (
         <div className="dw-frame-title">
@@ -169,11 +176,9 @@ export function Workbench({
     <TooltipProvider delayDuration={350}><div className={`dw-workbench ${collapsed ? 'dw-nav-collapsed' : ''} ${resizing ? 'dw-resizing' : ''}`} style={{ '--dw-sidebar-width': `${sidebarWidth}px` } as CSSProperties}>
       {showNav && <Button className="dw-scrim" aria-label="Close component list" onClick={() => setShowNav(false)} />}
       <aside ref={sidebarRef} className={`dw-sidebar ${showNav ? 'dw-sidebar-open' : ''}`}>
-        <a className="dw-brand" href={basePath}>
+        <a className="dw-brand" href={basePath} title={project}>
           <span className="dw-brand-mark"><DesignBenchMark /></span>
-          <span>
-            DesignBench<small>{project}</small>
-          </span>
+          <span className="dw-project-name">{project}</span>
         </a>
         <label className="dw-search">
           <span className="dw-sr-only">Search components</span>
@@ -187,7 +192,6 @@ export function Workbench({
           />
           <KbdGroup className="dw-search-shortcut" aria-hidden="true"><Kbd>{shortcutModifier}</Kbd><Kbd>K</Kbd></KbdGroup>
         </label>
-        <div className="dw-nav-summary">{entries.length} named components</div>
         <nav aria-label="Components" className="dw-nav">
           {groups.map((group) => {
             const items = filtered.filter((item) => item.group === group);
@@ -208,7 +212,7 @@ export function Workbench({
                   >
                   <a
                     href={`${basePath}?component=${item.id}`}
-                    aria-current={item.id === entry.id ? 'page' : undefined}
+                    aria-current={!showingSetup && !showCoverage && item.id === entry?.id ? 'page' : undefined}
                     onClick={(event) => {
                       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
                       event.preventDefault();
@@ -225,11 +229,17 @@ export function Workbench({
               </section>
             ) : null;
           })}
-          {!filtered.length && <p className="dw-empty">No matching components.</p>}
+          {!filtered.length && <p className="dw-empty">{entries.length ? 'No matching components.' : 'No components yet.'}</p>}
         </nav>
-        <Button variant="ghost" className="dw-coverage-button" onClick={() => setShowCoverage((value) => !value)}>
+        {!!coverage.length && <Button variant="ghost" className="dw-coverage-button" onClick={() => { setPage('components'); setShowCoverage(value => !value); setShowNav(false); }}>
           Coverage & gaps <span>{unpreviewed.length}</span>
-        </Button>
+        </Button>}
+        <a className="dw-setup-link" href={`${basePath}?${new URLSearchParams({ ...selection, view: 'setup' })}`} aria-current={showingSetup ? 'page' : undefined}
+          onClick={event => {
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+            event.preventDefault(); setPage('setup'); setShowCoverage(false); setShowNav(false);
+            window.history.pushState(null, '', `${basePath}?${new URLSearchParams({ ...selection, view: 'setup' })}`);
+          }}><BookOpen size={16} aria-hidden="true" />Setup</a>
         <div className="dw-sidebar-footer">Local preview · source edits refresh live</div>
         {!mobile && <div
           className="dw-sidebar-resizer" role="separator" tabIndex={0}
@@ -269,8 +279,8 @@ export function Workbench({
             >
               <WorkbenchIcon name="panels" />
             </Button>
-            <span className="dw-eyebrow">{project} <span aria-hidden="true">/</span> {entry.group}</span>
-            <div className="dw-title-row"><h1>{entry.name}</h1><div className="dw-title-actions">              <Button
+            <span className="dw-eyebrow">{project} <span aria-hidden="true">/</span> {showingSetup ? 'Setup' : entry?.group}</span>
+            <div className="dw-title-row"><h1>{showingSetup ? 'Setup' : entry?.name}</h1>{!showingSetup && entry && <div className="dw-title-actions">              <Button
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(window.location.href);
@@ -287,13 +297,13 @@ export function Workbench({
               >
                 <WorkbenchIcon name="link" /> {copied ? 'Copied' : 'Share'}
               </Button>
-<a className="dw-open" href={previewUrl(basePath, entry, selection)} target="_blank" rel="noreferrer">Preview <WorkbenchIcon name="external" /></a></div></div>
-            <p>{entry.description}</p>
+<a className="dw-open" href={previewUrl(basePath, entry, selection)} target="_blank" rel="noreferrer">Preview <WorkbenchIcon name="external" /></a></div>}</div>
+            {!showingSetup && <p>{entry?.description}</p>}
           </div>
 
         </header>
         {copyError && <p role="status" className="dw-copy-error">{copyError}</p>}
-        {showCoverage ? (
+        {showingSetup ? <SetupGuide embedded needsInit={needsInit} empty={!entries.length} command={setupCommand} /> : entry && (showCoverage ? (
           <section className="dw-coverage">
             <h2>Coverage & gaps</h2>
             <p>
@@ -391,7 +401,7 @@ export function Workbench({
             </section>
             </CollapsibleContent></Collapsible>
           </>
-        )}
+        ))}
       </main>
     </div></TooltipProvider>
   );

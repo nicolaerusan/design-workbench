@@ -1,19 +1,22 @@
-export function SetupGuide({ needsInit = false, command = 'npx design-workbench' }: { needsInit?: boolean; command?: string }) {
-  const steps = needsInit ? [
-    ['Create your workbench', `${command} init`, 'Create the catalog and a working example. Existing application code stays in place.'],
-    ['Discover your components', `${command} scan`, 'See which component exports can become previews.'],
-    ['Add draft previews', `${command} add --all`, 'Review generated props and providers before opening your components.'],
-  ] : [
-    ['Discover your components', `${command} scan`, 'List component exports in your project.'],
-    ['Add draft previews', `${command} add --all`, 'Create editable fixtures, then supply their required props and providers.'],
+import { Button } from './ui/button.tsx';
+
+export function SetupGuide({ needsInit = false, empty = true, embedded = false, command = 'npx design-workbench' }: {
+  needsInit?: boolean; empty?: boolean; embedded?: boolean; command?: string;
+}) {
+  const steps = [
+    ...(needsInit ? [['Create the catalog', `${command} init`, 'Create configuration and a working example.']] : []),
+    ['Run the workbench', `${command} dev`, 'Keep this terminal running. Source edits refresh the previews.'],
+    ['Find components', `${command} scan`, 'List component exports available to add.'],
+    ['Add previews', `${command} add --all`, 'Generate draft fixtures, then check their props, providers, and styles.'],
   ];
-  return <main className="dw-workbench dw-setup"><div className="dw-setup-card">
-    <div className="dw-eyebrow">DesignBench · Getting started</div>
-    <h1>{needsInit ? 'Set up your workbench' : 'Bring your first component'}</h1>
-    <p>{needsInit ? 'The preview server is running. Run these commands in another terminal to create your project’s catalog.' : 'Your catalog is empty. Add a component to start exploring designs, properties, and states.'}</p>
-    <ol>{steps.map(([title, value, description]) => <li key={title}><h2>{title}</h2><p>{description}</p><pre><code>{value}</code></pre></li>)}</ol>
-    <p>Using an embedded workbench? Add entries to the manifest supplied by your application instead.</p>
-    <button onClick={() => window.location.reload()}>Check setup</button>
-    <details><summary>Starting again later</summary><p>From a terminal in your project, start the local preview server:</p><pre><code>{command} dev</code></pre><p>Keep that terminal running while you use the workbench. The browser cannot start a stopped server.</p></details>
-  </div></main>;
+  const content = <div className="dw-setup-card">
+    {needsInit ? <h2>Set up your workbench</h2> : empty ? <h2>Bring your first component</h2> : <h2>A few commands to get going</h2>}
+    <p>{needsInit ? 'Run init in another terminal, from your project folder. This preview server is already running.' : empty ? 'Your catalog is empty. Add a component to start exploring.' : 'Run these from your project folder.'}</p>
+    <ol>{steps.map(([title, value, description]) => <li key={title}><h3>{title}</h3><pre><code>{value}</code></pre><p>{description}</p></li>)}</ol>
+    <div className="dw-setup-usage"><h3>Explore and iterate</h3><p>Choose a component, adjust its properties or state, and compare design ideas. Edit preview files to try new directions; Share copies the current view.</p></div>
+    <p className="dw-setup-note">Embedded in an existing app? Add entries to its catalog instead of using the CLI.</p>
+    {(empty || needsInit) && <Button variant="outline" onClick={() => window.location.reload()}>Check setup</Button>}
+  </div>;
+  return embedded ? <section className="dw-setup-content" aria-label="Setup guide">{content}</section>
+    : <main className="dw-workbench dw-setup">{content}</main>;
 }
