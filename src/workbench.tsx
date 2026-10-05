@@ -1,4 +1,5 @@
 'use client';
+import { Kbd, KbdGroup } from './ui/kbd.tsx';
 import { DesignBenchMark } from './brand.tsx';
 import { PanelLeft, ExternalLink, RotateCcw, Link as LinkIcon, ChevronRight } from 'lucide-react';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible.tsx';
@@ -68,6 +69,8 @@ export function Workbench({
     resolveSelection(entries, new URLSearchParams(initialSelection ? { ...initialSelection } : {})),
   );
   const [query, setQuery] = useState('');
+  const [shortcutModifier, setShortcutModifier] = useState('⌘');
+  useEffect(() => { setShortcutModifier(/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'); }, []);
   const [compare, setCompare] = useState(false);
   const [reset, setReset] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -177,11 +180,12 @@ export function Workbench({
           <Input
             ref={searchRef}
             aria-label="Search components"
+            aria-keyshortcuts="Meta+K Control+K"
             placeholder="Find a component…"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <kbd>⌘ K</kbd>
+          <KbdGroup className="dw-search-shortcut" aria-hidden="true"><Kbd>{shortcutModifier}</Kbd><Kbd>K</Kbd></KbdGroup>
         </label>
         <div className="dw-nav-summary">{entries.length} named components</div>
         <nav aria-label="Components" className="dw-nav">
