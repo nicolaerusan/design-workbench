@@ -234,7 +234,7 @@ Register `checkout-form` and its `Ready` state first. Context `design` and `stat
 
 ### Customize and persist
 
-Pass `controls: WorkbenchControls` to use your own `Button`, `Input`, `Textarea`, and `Select`. An optional `NavigationPreview` wrapper can add a hover preview; the default is a plain navigation item. Keep adapter component identities stable outside render. Public types are exported from the package.
+Pass `controls: WorkbenchControls` to use your own `Button`, `Input`, `Textarea`, and `Select`. Sidebar items show a live, scaled preview after a 200 ms hover or keyboard focus. Only the open preview mounts an iframe; it closes on Escape, selection, scroll, resize, or leaving the card, and is disabled for mobile navigation. Previews show the default design/state and do not change the current selection. An optional `NavigationPreview` wrapper can replace this built-in behavior. Keep adapter component identities stable outside render. Public types are exported from the package.
 
 Optional `coverage: CoverageItem[]` and `scopeNote` describe your component inventory. The React UI consumes host-provided coverage. The CLI discovers candidates, but does not label them as verified coverage.
 

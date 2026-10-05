@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { defaultControls, type WorkbenchControls } from './controls.tsx';
-import type { NavigationPreviewProps } from './controls.tsx';
+import { NavigationPreview as DefaultNavigationPreview } from './navigation-preview.tsx';
 import { Properties } from './properties.tsx';
 import { SetupGuide } from './setup-guide.tsx';
 import { ContextPanel } from './contexts.tsx';
@@ -40,7 +40,7 @@ export function Workbench({
   setupCommand,
 }: WorkbenchProps) {
   const { Button, Input, Select } = controls;
-  const NavigationPreview = controls.NavigationPreview ?? PlainNavigationItem;
+  const NavigationPreview = controls.NavigationPreview ?? DefaultNavigationPreview;
   const searchRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
@@ -411,7 +411,6 @@ export function Workbench({
     </div>
   );
 }
-function PlainNavigationItem({ children }: NavigationPreviewProps) { return children; }
 function Status({ idea }: { idea: DesignIdea }) {
   return (
     <span
