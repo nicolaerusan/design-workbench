@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { defaultControls, type WorkbenchControls } from './controls.tsx';
 import { NavigationPreview as DefaultNavigationPreview } from './navigation-preview.tsx';
-import { Properties } from './properties.tsx';
+import { PreviewInspector } from './preview-inspector.tsx';
 import { SetupGuide } from './setup-guide.tsx';
 import { ContextPanel } from './contexts.tsx';
 import { designsFor, previewUrl, resolveSelection, safeReferenceUrl } from './model.ts';
@@ -320,7 +320,6 @@ export function Workbench({
               </div>
             </section>}
             <div className="dw-toolbar">
-              <div className="dw-toolbar-field"><span>State</span><Select aria-label="State" value={selection.state} onValueChange={(state) => update({ state })} options={entry.variants.map(value => ({ value, label: value }))} /></div>
               <div className="dw-toolbar-field"><span>Viewport</span><Select aria-label="Viewport" value={selection.viewport} onValueChange={(viewport) => update({ viewport })} options={[{value:'fit',label:'Fit panel'},{value:'375',label:'375 · Mobile'},{value:'768',label:'768 · Tablet'},{value:'1280',label:'1280 · Desktop'}]} /></div>
               <span className="dw-toolbar-spacer" />
               {!!entry.contexts?.length && <a className="dw-open" href="#dw-contexts">Contexts · {entry.contexts.length}</a>}
@@ -357,7 +356,8 @@ export function Workbench({
               <div><dt>Viewport</dt><dd>The preview’s width in pixels. Use it to check responsive layouts.</dd></div>
               <div><dt>Share</dt><dd>Copy the current selection and properties. A localhost link works only where this project’s server is running.</dd></div>
             </dl></details>
-            <Properties entry={entry} selection={selection} controls={controls} onChange={props => update({ props: JSON.stringify(props) }, true)} />
+            <PreviewInspector projectId={projectId} entry={entry} selection={selection} controls={controls}
+              onStateChange={state => update({ state })} onPropsChange={props => update({ props: JSON.stringify(props) }, true)}>
             <div className="dw-preview-caption"><span>{design.name}</span>{designs.length === 1 && <Status idea={design} />}<span>{design.description}</span></div>
             <div className={`dw-previews ${compare ? 'dw-compare' : ''}`}>
               {ready ? (
@@ -370,6 +370,7 @@ export function Workbench({
                 <p className="dw-empty">Loading preview…</p>
               )}
             </div>
+            </PreviewInspector>
             <ContextPanel key={`contexts:${entry.id}`} entry={entry} entries={entries} basePath={basePath} controls={controls} navigate={(next) => { update(next); window.scrollTo({ top: 0 }); }} />
             <details className="dw-inspector" key={`inspector:${entry.id}`}>
               <summary>Source, references &amp; feedback <span>Inspect this design</span></summary>

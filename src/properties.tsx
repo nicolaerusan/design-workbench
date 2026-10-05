@@ -10,7 +10,7 @@ export function Properties({ entry, selection, controls, onChange }: {
   const definitions = Object.entries(entry.propControls ?? {});
   if (!definitions.length) return <p className="dw-props-empty">This preview has no editable properties yet. Its states are defined in the fixture.</p>;
   return <section className="dw-properties" aria-label="Properties">
-    <div className="dw-properties-heading"><div><h2>Properties</h2><p>Adjust this preview. A state supplies preset values; your changes are included in Share.</p></div>
+    <div className="dw-properties-heading"><div><h2>Properties</h2><p>Edit individual values. Your changes are included in Share.</p></div>
       <Button variant="ghost" disabled={!selection.props} onClick={() => onChange({})}>Reset properties</Button>
     </div>
     <div className="dw-property-grid">{definitions.map(([name, control]) => {

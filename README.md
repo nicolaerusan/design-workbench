@@ -232,6 +232,8 @@ Register `checkout-form` and its `Ready` state first. Context `design` and `stat
 
 `validateCatalog` checks stable component IDs, duplicates, missing states, design-ID collisions, context targets, self-links, context selections, and incomplete usage metadata. The host must verify that source evidence is accurate and that its fixtures visibly contain the child.
 
+The **Properties & states** inspector groups state presets and editable values beside the preview. Collapse it to gain canvas space, or use the docking buttons to stack it below the preview or place it on the right. Its position and collapsed state are remembered locally per project. Narrow panels automatically stack it below. Changing the layout preserves the running preview; changing a state preset clears property overrides. Edited presets show **Modified**.
+
 ### Customize and persist
 
 Pass `controls: WorkbenchControls` to use your own `Button`, `Input`, `Textarea`, and `Select`. Sidebar items show a live, scaled preview after a 200 ms hover or keyboard focus. Only the open preview mounts an iframe; it closes on Escape, selection, scroll, resize, or leaving the card, and is disabled for mobile navigation. Previews show the default design/state and do not change the current selection. An optional `NavigationPreview` wrapper can replace this built-in behavior. Keep adapter component identities stable outside render. Public types are exported from the package.
