@@ -1,8 +1,10 @@
-# Design Workbench
+# DesignBench
 
 **A component workbench for designing with AI.** Explore ideas in browser panels, keep multiple directions for the same React component, compare them side by side, and refine them in the context of a real application.
 
-The vision is a richer workspace for human–agent design iteration, inspired by component tools like Storybook, with deep integration with [Pattern Garden](https://pattern.garden) for inspiration from a universal component library. **Storybook is not required:** Design Workbench has its own catalog and preview runtime.
+The vision is a richer workspace for human–agent design iteration, inspired by component tools like Storybook, with deep integration with [Pattern Garden](https://pattern.garden) for inspiration from a universal component library. **Storybook is not required:** DesignBench has its own catalog and preview runtime.
+
+The product is called **DesignBench**. Package names, CLI commands, configuration paths, and the repository still use `design-workbench` for compatibility during development.
 
 > **Early development.** `@design-workbench/react` provides the React catalog, comparison UI, and a standalone CLI. The workbench was extracted from Day.new and is used by HomeBase. The CLI runs client React previews through Vite; existing applications can still provide their own preview routes. The repository is private and the package has not been published to npm. Direct Pattern Garden library access, site-indexing requests, and built-in AI orchestration are planned.
 
@@ -232,7 +234,13 @@ Register `checkout-form` and its `Ready` state first. Context `design` and `stat
 
 `validateCatalog` checks stable component IDs, duplicates, missing states, design-ID collisions, context targets, self-links, context selections, and incomplete usage metadata. The host must verify that source evidence is accurate and that its fixtures visibly contain the child.
 
-The **Properties & states** inspector groups state presets and editable values beside the preview. Collapse it to gain canvas space, or use the docking buttons to stack it below the preview or place it on the right. Its position and collapsed state are remembered locally per project. Narrow panels automatically stack it below. Changing the layout preserves the running preview; changing a state preset clears property overrides. Edited presets show **Modified**.
+The **Properties & states** inspector groups state presets and editable values beside the preview. Collapse it to gain canvas space, or use the docking buttons to stack it below the preview or place it on the right. Drag the divider vertically or horizontally to resize it; arrow keys adjust the focused divider, and double-click resets its size. Position, size, and collapsed state are remembered locally per project. Viewport and Reset live inside the inspector; Share sits beside the component name. Narrow panels automatically stack it below. Changing the layout preserves the running preview; changing a state preset clears property overrides. Edited presets show **Modified**.
+
+### UI foundation
+
+The default UI uses source-copied **shadcn/ui** components with **Lucide** icons. Buttons, inputs, textareas, selects, checkboxes, hover cards, tooltips, collapsibles, and the preview/inspector splitter use these local components. Their source and MIT attribution live in `src/ui`. Namespaced CSS replaces Tailwind utilities so host projects do not need a Tailwind setup. Layout, catalog logic, and host-specific adapters remain ordinary React.
+
+The selected **Trestle** logo is available as editable SVG in `design/brand/designbench.svg`; the other studies remain in that folder.
 
 ### Customize and persist
 

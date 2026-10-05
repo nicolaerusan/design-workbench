@@ -8,7 +8,7 @@ export function SetupGuide({ needsInit = false, command = 'npx design-workbench'
     ['Add draft previews', `${command} add --all`, 'Create editable fixtures, then supply their required props and providers.'],
   ];
   return <main className="dw-workbench dw-setup"><div className="dw-setup-card">
-    <div className="dw-eyebrow">Design workbench · Getting started</div>
+    <div className="dw-eyebrow">DesignBench · Getting started</div>
     <h1>{needsInit ? 'Set up your workbench' : 'Bring your first component'}</h1>
     <p>{needsInit ? 'The preview server is running. Run these commands in another terminal to create your project’s catalog.' : 'Your catalog is empty. Add a component to start exploring designs, properties, and states.'}</p>
     <ol>{steps.map(([title, value, description]) => <li key={title}><h2>{title}</h2><p>{description}</p><pre><code>{value}</code></pre></li>)}</ol>

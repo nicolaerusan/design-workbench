@@ -84,7 +84,7 @@ test('standalone Vite serves catalog, imported component, and isolated routes wi
   t.after(() => server.close());
   const base = `http://127.0.0.1:${server.httpServer.address().port}`;
   const home = await fetch(base).then(r => r.text());
-  assert.match(home, /Design Workbench/);
+  assert.match(home, /DesignBench/);
   assert.match(home, /cli\/app\/main.js/);
   const preview = await fetch(`${base}/welcome?design=solid&state=Disabled`).then(r => r.text());
   assert.match(preview, /cli\/app\/main.js/);

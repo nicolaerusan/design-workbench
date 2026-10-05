@@ -1,4 +1,8 @@
 'use client';
+import { DesignBenchMark } from './brand.tsx';
+import { PanelLeft, ExternalLink, RotateCcw, Link as LinkIcon, ChevronRight } from 'lucide-react';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible.tsx';
+import { TooltipProvider } from './ui/tooltip.tsx';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { defaultControls, type WorkbenchControls } from './controls.tsx';
 import { NavigationPreview as DefaultNavigationPreview } from './navigation-preview.tsx';
@@ -39,7 +43,7 @@ export function Workbench({
   scopeNote,
   setupCommand,
 }: WorkbenchProps) {
-  const { Button, Input, Select } = controls;
+  const { Button, Input } = controls;
   const NavigationPreview = controls.NavigationPreview ?? DefaultNavigationPreview;
   const searchRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLButtonElement>(null);
@@ -159,13 +163,13 @@ export function Workbench({
     </section>
   );
   return (
-    <div className={`dw-workbench ${collapsed ? 'dw-nav-collapsed' : ''} ${resizing ? 'dw-resizing' : ''}`} style={{ '--dw-sidebar-width': `${sidebarWidth}px` } as CSSProperties}>
+    <TooltipProvider delayDuration={350}><div className={`dw-workbench ${collapsed ? 'dw-nav-collapsed' : ''} ${resizing ? 'dw-resizing' : ''}`} style={{ '--dw-sidebar-width': `${sidebarWidth}px` } as CSSProperties}>
       {showNav && <Button className="dw-scrim" aria-label="Close component list" onClick={() => setShowNav(false)} />}
       <aside ref={sidebarRef} className={`dw-sidebar ${showNav ? 'dw-sidebar-open' : ''}`}>
         <a className="dw-brand" href={basePath}>
-          <span className="dw-brand-mark"><WorkbenchIcon name="panels" /></span>
+          <span className="dw-brand-mark"><DesignBenchMark /></span>
           <span>
-            Design workbench<small>{project}</small>
+            DesignBench<small>{project}</small>
           </span>
         </a>
         <label className="dw-search">
@@ -262,18 +266,29 @@ export function Workbench({
               <WorkbenchIcon name="panels" />
             </Button>
             <span className="dw-eyebrow">{project} <span aria-hidden="true">/</span> {entry.group}</span>
-            <h1>{entry.name}</h1>
+            <div className="dw-title-row"><h1>{entry.name}</h1><div className="dw-title-actions">              <Button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(window.location.href);
+                    setCopied(true);
+                    setCopyError('');
+                  } catch {
+                    setCopied(false);
+                    setCopyError('Could not copy. The preview URL is in your address bar.');
+                  }
+                }}
+                variant="outline"
+                title="Copy a link to this preview. Local links require the same project running on your machine."
+                aria-live="polite"
+              >
+                <WorkbenchIcon name="link" /> {copied ? 'Copied' : 'Share'}
+              </Button>
+<a className="dw-open" href={previewUrl(basePath, entry, selection)} target="_blank" rel="noreferrer">Open preview <WorkbenchIcon name="external" /></a></div></div>
             <p>{entry.description}</p>
           </div>
-          <a
-            className="dw-open"
-            href={previewUrl(basePath, entry, selection)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open preview <WorkbenchIcon name="external" />
-          </a>
+
         </header>
+        {copyError && <p role="status" className="dw-copy-error">{copyError}</p>}
         {showCoverage ? (
           <section className="dw-coverage">
             <h2>Coverage & gaps</h2>
@@ -317,46 +332,11 @@ export function Workbench({
 
                   </Button>
                 ))}
+                <Button variant="ghost" className="dw-compare-toggle" aria-pressed={compare} onClick={() => setCompare(value => !value)}>Compare ideas</Button>
               </div>
             </section>}
-            <div className="dw-toolbar">
-              <div className="dw-toolbar-field"><span>Viewport</span><Select aria-label="Viewport" value={selection.viewport} onValueChange={(viewport) => update({ viewport })} options={[{value:'fit',label:'Fit panel'},{value:'375',label:'375 · Mobile'},{value:'768',label:'768 · Tablet'},{value:'1280',label:'1280 · Desktop'}]} /></div>
-              <span className="dw-toolbar-spacer" />
-              {!!entry.contexts?.length && <a className="dw-open" href="#dw-contexts">Contexts · {entry.contexts.length}</a>}
-              <Button variant="ghost" title="Restart the preview with the current properties" onClick={() => setReset((value) => value + 1)}><WorkbenchIcon name="reset" /> Reset</Button>
-              {designs.length > 1 && (
-                <Button variant="ghost" aria-pressed={compare} onClick={() => setCompare((value) => !value)}>
-                  Compare ideas
-                </Button>
-              )}
-              <Button
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(window.location.href);
-                    setCopied(true);
-                    setCopyError('');
-                  } catch {
-                    setCopied(false);
-                    setCopyError('Could not copy. The preview URL is in your address bar.');
-                  }
-                }}
-                variant="outline"
-                title="Copy a link to this preview. Local links require the same project running on your machine."
-                aria-live="polite"
-              >
-                <WorkbenchIcon name="link" /> {copied ? 'Copied' : 'Share'}
-              </Button>
-            </div>
-            {copyError && <p role="status" className="dw-copy-error">{copyError}</p>}
-            <details className="dw-preview-help"><summary>How to use this preview</summary><dl>
-              <div><dt>Designs</dt><dd>Alternative visual directions for the same component. Compare them side by side.</dd></div>
-              <div><dt>States</dt><dd>Named examples, such as Loading or Disabled. Selecting a state resets property overrides to that preset.</dd></div>
-              <div><dt>Properties</dt><dd>Individual values such as label, size, and disabled. Changes affect previews and shared links, not application source.</dd></div>
-              <div><dt>Status</dt><dd>Exploration is an idea. Source preview has no verified usage. Used in app means the manifest includes reviewed source evidence.</dd></div>
-              <div><dt>Viewport</dt><dd>The preview’s width in pixels. Use it to check responsive layouts.</dd></div>
-              <div><dt>Share</dt><dd>Copy the current selection and properties. A localhost link works only where this project’s server is running.</dd></div>
-            </dl></details>
             <PreviewInspector projectId={projectId} entry={entry} selection={selection} controls={controls}
+              onViewportChange={viewport => update({ viewport })} onReset={() => setReset(value => value + 1)}
               onStateChange={state => update({ state })} onPropsChange={props => update({ props: JSON.stringify(props) }, true)}>
             <div className="dw-preview-caption"><span>{design.name}</span>{designs.length === 1 && <Status idea={design} />}<span>{design.description}</span></div>
             <div className={`dw-previews ${compare ? 'dw-compare' : ''}`}>
@@ -371,9 +351,9 @@ export function Workbench({
               )}
             </div>
             </PreviewInspector>
+            <Collapsible className="dw-inspector" key={`inspector:${entry.id}`}>
+              <CollapsibleTrigger className="dw-source-trigger"><ChevronRight size={14} aria-hidden="true" />Source, references &amp; feedback <span>Inspect this design</span></CollapsibleTrigger><CollapsibleContent>
             <ContextPanel key={`contexts:${entry.id}`} entry={entry} entries={entries} basePath={basePath} controls={controls} navigate={(next) => { update(next); window.scrollTo({ top: 0 }); }} />
-            <details className="dw-inspector" key={`inspector:${entry.id}`}>
-              <summary>Source, references &amp; feedback <span>Inspect this design</span></summary>
             <section className="dw-details">
               <div>
                 <div className="dw-section-label">Design source</div>
@@ -405,11 +385,11 @@ export function Workbench({
                 references={design.references ?? []}
               />
             </section>
-            </details>
+            </CollapsibleContent></Collapsible>
           </>
         )}
       </main>
-    </div>
+    </div></TooltipProvider>
   );
 }
 function Status({ idea }: { idea: DesignIdea }) {
@@ -564,11 +544,6 @@ function ReferencePanel({
 }
 
 function WorkbenchIcon({ name }: { name: 'panels' | 'external' | 'reset' | 'link' }) {
-  const paths = {
-    panels: <><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></>,
-    external: <><path d="M14 3h7v7M21 3l-9 9M10 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-4"/></>,
-    reset: <><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></>,
-    link: <><path d="m10 13 4-4M8 15l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M16 9l1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(0 1) scale(.9)"/></>,
-  };
-  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>;
+  const Icon = { panels: PanelLeft, external: ExternalLink, reset: RotateCcw, link: LinkIcon }[name];
+  return <Icon size={16} strokeWidth={1.65} aria-hidden="true" />;
 }

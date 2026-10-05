@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util';
 import { scanProject } from './scan.mjs';
 import { initialize, refreshInventory, addComponents } from './setup.mjs';
 
-const help = `Design Workbench
+const help = `DesignBench
 
 Usage: design-workbench <init|scan|add|dev> [options]
 
@@ -59,6 +59,6 @@ try {
     }
   }
 } catch (error) {
-  console.error(`Design Workbench: ${error.code === 'EEXIST' ? '.design-workbench already exists. Use scan --write to refresh discovery; edit config.json to change settings.' : error.message}`);
+  console.error(`DesignBench: ${error.code === 'EEXIST' ? '.design-workbench already exists. Use scan --write to refresh discovery; edit config.json to change settings.' : error.message}`);
   process.exitCode = 1;
 }

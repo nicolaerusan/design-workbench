@@ -1,3 +1,4 @@
+@import "./ui.css";
 .dw-workbench {
   --dw-bg: #fff;
   --dw-line: #e8e8e6;
@@ -216,16 +217,25 @@
 .dw-hover-loading { position: absolute; inset: 0; display: grid; place-content: center; padding: 24px; text-align: center; color: #8a8a83; font-size: 11px; }
 .dw-hover-preview footer { flex-shrink: 0; padding: 9px 14px; border-top: 1px solid #eeeeeb; font-size: 10px; color: #73736e; }
 
-/* Keep preview frames mounted when switching inspector position. */
-.dw-workspace-container { container-type: inline-size; margin: 0 32px 24px; }
-.dw-preview-workspace { display: grid; grid-template-rows: minmax(240px, 1fr) auto; height: max(560px, calc(100dvh - 260px)); border: 1px solid var(--dw-line); border-radius: 14px; overflow: hidden; }
+
+/* The canvas and inspector share all remaining app space. */
+.dw-workbench { height: 100dvh; min-height: 0; overflow: hidden; }
+.dw-main { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+.dw-header { flex-shrink: 0; padding: 18px 24px 16px; }
+.dw-title-row { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin: 14px 0 7px; flex-wrap: wrap; }
+.dw-title-row h1 { margin: 0; }
+.dw-title-actions { display: flex; align-items: center; gap: 8px; }
+.dw-designs { flex-shrink: 0; padding: 0 24px 12px; }
+.dw-workbench .dw-compare-toggle { margin-left: auto; }
+.dw-workspace-container { flex: 1; min-height: 0; margin: 0; }
+.dw-preview-workspace { height: 100%; overflow: hidden; border-top: 1px solid var(--dw-line); }
 .dw-preview-stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: auto; padding: 16px; }
-.dw-preview-stage .dw-preview-caption { padding: 0 0 12px; }
-.dw-preview-stage .dw-previews { padding: 0; flex: 1; min-height: 240px; }
-.dw-preview-stage .dw-preview-card { display: flex; flex-direction: column; }
-.dw-preview-stage .dw-canvas { flex: 1; min-height: 240px; }
-.dw-preview-stage .dw-canvas iframe { height: 100%; min-height: 240px; }
-.dw-controls-panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #fafaf9; border-top: 1px solid var(--dw-line); }
+.dw-preview-stage .dw-preview-caption { padding: 0 0 12px; flex-shrink: 0; }
+.dw-preview-stage .dw-previews { padding: 0; flex: 1; min-height: 120px; }
+.dw-preview-stage .dw-preview-card { display: flex; flex-direction: column; border-radius: 8px; }
+.dw-preview-stage .dw-canvas { flex: 1; min-height: 120px; }
+.dw-preview-stage .dw-canvas iframe { height: 100%; min-height: 120px; }
+.dw-controls-panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #fafaf9; overflow: hidden; }
 .dw-controls-header { display: flex; align-items: center; gap: 4px; padding: 6px 10px; flex-shrink: 0; }
 .dw-workbench .dw-controls-toggle { flex: 1; justify-content: flex-start; min-width: 0; border-radius: 6px; text-align: left; flex-wrap: wrap; gap: 6px; }
 .dw-controls-toggle strong { font-size: 12px; font-weight: 600; }
@@ -233,8 +243,10 @@
 .dw-dock-choices { display: flex; flex-shrink: 0; gap: 2px; }
 .dw-workbench .dw-dock-choices button { padding: 6px; min-height: 30px; width: 30px; border-radius: 6px; }
 .dw-workbench .dw-dock-choices button[aria-pressed=true] { background: #e9e9e5; }
-.dw-controls-body { overflow: auto; max-height: 260px; padding: 0 16px 16px; }
+.dw-controls-body { overflow: auto; min-height: 0; flex: 1; padding: 0 16px 16px; }
 .dw-controls-body[hidden] { display: none; }
+.dw-inspector-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--dw-line); }
+.dw-inspector-tools label { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .dw-state-preset { padding: 12px 0 16px; border-top: 1px solid var(--dw-line); border-bottom: 1px solid var(--dw-line); margin-bottom: 16px; }
 .dw-state-preset label { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 500; }
 .dw-state-preset p { margin: 8px 0 0; font-size: 11px; color: var(--dw-muted); }
@@ -242,13 +254,30 @@
 .dw-controls-panel .dw-props-empty { margin: 0; }
 .dw-controls-panel .dw-properties-heading button { white-space: nowrap; font-size: 11px; padding: 5px 8px; }
 .dw-controls-panel .dw-property-grid { margin-top: 12px; }
-@container (min-width: 580px) {
-  .dw-dock-right:not(.dw-controls-collapsed) { grid-template-columns: minmax(0, 1fr) 280px; grid-template-rows: minmax(0, 1fr); }
-  .dw-dock-right:not(.dw-controls-collapsed) .dw-controls-panel { border-top: 0; border-left: 1px solid var(--dw-line); }
-  .dw-dock-right:not(.dw-controls-collapsed) .dw-controls-body { max-height: none; flex: 1; }
-  .dw-dock-right:not(.dw-controls-collapsed) .dw-controls-summary { flex-basis: 100%; padding-left: 15px; }
-  .dw-dock-right:not(.dw-controls-collapsed) .dw-property-grid { grid-template-columns: 1fr; }
-  .dw-dock-right:not(.dw-controls-collapsed) .dw-properties-heading { flex-wrap: wrap; gap: 6px; }
+.dw-dock-right .dw-controls-summary { flex-basis: 100%; padding-left: 15px; }
+.dw-dock-right .dw-property-grid { grid-template-columns: 1fr; }
+.dw-dock-right .dw-properties-heading { flex-wrap: wrap; gap: 6px; }
+.dw-controls-collapsed .dw-controls-panel { border-top: 1px solid var(--dw-line); }
+.dw-main > .dw-inspector { flex-shrink: 0; max-height: 35%; overflow: auto; margin: 0; padding: 0 24px; }
+.dw-main > .dw-inspector > summary { padding: 10px 0; }
+.dw-coverage { overflow: auto; min-height: 0; }
+@media (max-width: 700px) {
+  .dw-header { padding: 12px 16px; }
+  .dw-header p { display: none; }
+  .dw-title-row { margin-top: 10px; }
+  .dw-title-row h1 { font-size: 20px; }
+  .dw-title-actions { gap: 4px; flex-wrap: wrap; }
+  .dw-title-actions .dw-open { font-size: 11px; padding: 6px 8px; }
+  .dw-preview-stage { padding: 10px; }
+  .dw-controls-summary { display: none; }
 }
-@media (max-width: 1000px) { .dw-workspace-container { margin-inline: 24px; } }
-@media (max-width: 700px) { .dw-workspace-container { margin-inline: 12px; } .dw-controls-summary { display: none; } }
+
+/* shadcn resizable groups own panel geometry and pointer/keyboard behavior. */
+.dw-preview-workspace.db-resizable-group { display: flex; border-top: 1px solid var(--dw-line); }
+.dw-preview-workspace .dw-preview-stage, .dw-preview-workspace .dw-controls-panel { height: 100%; }
+.dw-hidden-handle { display: none; }
+.dw-workbench .dw-source-trigger { display: flex; justify-content: flex-start; gap: 8px; width: 100%; border: 0; border-radius: 0; padding: 10px 0; background: transparent; text-align: left; }
+.dw-source-trigger > span { font-size: 11px; color: var(--dw-muted); margin-left: 8px; }
+.dw-source-trigger[data-state=open] > svg { transform: rotate(90deg); }
+.dw-hover-preview.db-hover-card { position: relative; width: 344px; max-width: calc(100vw - 24px); max-height: var(--radix-hover-card-content-available-height); }
+.dw-workbench .db-select-trigger { justify-content: space-between; gap: 10px; }
