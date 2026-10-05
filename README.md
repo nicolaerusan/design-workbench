@@ -15,6 +15,7 @@ The vision is a richer workspace for human–agent design iteration, inspired by
 | Multiple design directions | Each component can retain several named designs with stable IDs, descriptions, source paths, and references. Designs are registered in the project manifest. |
 | Side-by-side comparison | Compare all registered designs for one component using the same selected fixture state and viewport. |
 | Interactive preview panels | Render real components in host-provided iframes, open a preview independently, and reset its mounted state. |
+| Editable properties | Text, boolean, select, and number controls; named-state presets; validated overrides included in shared URLs. |
 | Responsive inspection | Fit the panel or select 375, 768, or 1280 px preview widths. |
 | Shareable selection | URLs preserve component, design, state, and viewport; browser back/forward restores selection. |
 | Components in context | Inspect a component inside registered parent compositions, explore the parent, and follow automatically derived “Contains” links. |
@@ -101,6 +102,8 @@ Generated fixtures import your real components with an editable `fixtureProps` o
 
 The standalone runner supports client-renderable React components, TypeScript path aliases, and CSS imports. Add your shared CSS and wrappers in `catalog.ts` or individual fixtures. It does not load the host's Vite configuration, framework plugins, or server runtime. Components requiring Next.js server features or other framework-specific behavior should use client fixtures or the host integration below. Files in a host `public/` directory are not served automatically.
 
+`dev` can start before `init`: it shows a setup page with commands appropriate to the current installation. Run those commands in another terminal and choose **Check setup**. An empty catalog explains how to discover and add components. An already-open page shows restart guidance if the dev server disconnects. A fresh browser navigation while the server is stopped will still show the browser’s connection error; no app code is running to render an empty state.
+
 The dev server binds to `127.0.0.1` and defaults to port 7070 (`--port` changes it). It is a local development tool and executes your fixture imports. Keep setup files in version control so teammates and agents share the same fixtures.
 
 ### Work with an AI agent
@@ -177,6 +180,33 @@ For example, `/design/primary-button?design=soft&state=Disabled` should render t
 A workbench link looks like `/design?component=primary-button&design=soft&state=Disabled&viewport=375`. Optional `initialSelection` supports a server-resolved initial selection.
 
 The host owns fixture isolation, application providers, and access control. Use synthetic data and development-only or access-controlled routes. Preview iframes are not a security sandbox for arbitrary code. There is no Next.js, Tailwind, authentication, or database dependency in the core package.
+
+### Properties and state presets
+
+States are named fixture presets. Properties are individual inputs that can be adjusted independently, similar to component properties in design tools. Designs remain separate implementations or visual directions.
+
+```tsx
+// Add to a WorkbenchEntry:
+propControls: {
+  label: { type: 'text', defaultValue: 'Continue', description: 'Button text.' },
+  disabled: { type: 'boolean', defaultValue: false },
+  size: { type: 'select', defaultValue: 'Medium', options: ['Small', 'Medium', 'Large'] },
+  radius: { type: 'number', defaultValue: 8, min: 0, max: 32 },
+},
+stateProps: { Disabled: { disabled: true } },
+```
+
+Apply them in the fixture renderer:
+
+```tsx
+import { resolvePreviewProps } from '@design-workbench/react';
+const props = resolvePreviewProps(entry, selection);
+return <Button {...fixtureProps} {...props} />;
+```
+
+Precedence is defaults, then the selected state preset, then validated URL overrides. Switching state or component clears overrides. **Reset properties** returns to preset values; **Reset** remounts the preview with current values. Comparison panels receive the same overrides. **Share** copies the current URL and briefly shows **Copied**; a localhost URL still needs the project running on the recipient's machine.
+
+Controls are explicitly declared by the fixture author, not inferred from all component props. Only declared string, boolean, and finite number values are accepted; invalid options, out-of-range numbers, malformed JSON, and undeclared props are ignored. Strings are limited to 2,000 characters and serialized overrides to 16,000 characters. Functions, JSX, providers, and complex data remain in fixture code. Existing hosts without `propControls` keep their state-based previews unchanged.
 
 ### Show components in context
 

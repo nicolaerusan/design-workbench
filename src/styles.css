@@ -173,3 +173,32 @@
 .dw-sidebar-resizer:focus-visible { outline: 2px solid #73736e; outline-offset: -2px; }
 .dw-resizing { cursor: col-resize; user-select: none; }
 .dw-resizing iframe { pointer-events: none; }
+
+.dw-preview-help { margin: 0 32px 16px; color: var(--dw-muted); font-size: 12px; }
+.dw-preview-help summary { cursor: pointer; width: fit-content; }
+.dw-preview-help dl { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 18px; padding: 18px; background: #fafaf9; border: 1px solid var(--dw-line); border-radius: 12px; }
+.dw-preview-help dt { color: var(--dw-ink); font-weight: 600; margin-bottom: 5px; }
+.dw-preview-help dd { margin: 0; }
+.dw-properties { margin: 0 32px 20px; border: 1px solid var(--dw-line); border-radius: 12px; padding: 16px; }
+.dw-properties-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.dw-properties h2 { font-size: 13px; margin: 0 0 4px; font-weight: 600; }
+.dw-properties p, .dw-props-empty { font-size: 12px; color: var(--dw-muted); margin: 0; }
+.dw-props-empty { margin: 0 32px 18px; }
+.dw-property-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 16px; margin-top: 18px; }
+.dw-property { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.dw-property-label { font-size: 12px; }
+.dw-property-label code { color: var(--dw-muted); font-size: 10px; margin-left: 5px; }
+.dw-property input:not([type=checkbox]) { width: 100%; padding: 8px 10px; min-height: 36px; border: 1px solid var(--dw-line); border-radius: 8px; background: white; color: var(--dw-ink); }
+.dw-toggle { display: flex; gap: 8px; align-items: center; min-height: 36px; }
+.dw-toggle input { accent-color: #252523; width: 17px; height: 17px; }
+.dw-setup { justify-content: center; padding: 64px 24px; }
+.dw-setup-card { width: 100%; max-width: 680px; }
+.dw-setup h1 { font-size: 30px; letter-spacing: -.7px; font-weight: 500; margin: 14px 0 10px; }
+.dw-setup p { color: var(--dw-muted); line-height: 1.7; }
+.dw-setup ol { padding-left: 20px; margin: 28px 0; }
+.dw-setup li { padding-left: 6px; margin-bottom: 24px; }
+.dw-setup h2 { font-size: 14px; font-weight: 600; margin: 0; }
+.dw-setup pre { padding: 14px; background: #f7f7f5; border: 1px solid var(--dw-line); border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.dw-setup details { margin-top: 24px; }
+.dw-setup summary { cursor: pointer; }
+@media (max-width: 700px) { .dw-properties, .dw-preview-help, .dw-props-empty { margin-left: 16px; margin-right: 16px; } .dw-property-grid { grid-template-columns: 1fr; } }

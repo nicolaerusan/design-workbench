@@ -7,3 +7,31 @@ const entry = {id:'button',name:'Button',group:'Controls',source:'Button.tsx',de
 test('standalone package renders without a host framework',()=>{const html=renderToStaticMarkup(createElement(Workbench,{project:'Fixture',projectId:'fixture',basePath:'/design',entries:[entry]}));assert.match(html,/Design workbench/);assert.match(html,/Button/);});
 test('selection URLs preserve identity and normalize unknown states',()=>{const selected=resolveSelection([entry],new URLSearchParams('component=button&state=Disabled&viewport=375'));assert.equal(selected.state,'Disabled');assert.equal(previewUrl('/design',entry,selected),'/design/button?design=current&state=Disabled');assert.equal(resolveSelection([entry],new URLSearchParams('state=unknown')).state,'Default');assert.deepEqual(validateCatalog([entry]),[]);assert.ok(validateCatalog([entry,entry]).length);});
 test('PatternGarden adapter preserves provenance and excludes unsafe URLs',()=>{const refs=patternGardenReferences({name:'Example',canonicalUrl:'https://example.com',limitations:['Public page only.'],captures:[{id:'capture-1',patternGardenUrl:'http://127.0.0.1:4317/library/capture-1/reference.md'},{id:'bad',patternGardenUrl:'javascript:alert(1)'}]});assert.equal(refs.length,2);assert.match(refs[1].notes,/Public page only/);assert.match(refs[1].title,/capture-1/);});
+
+test('properties apply defaults, state presets, and only validated shared overrides', async () => {
+  const { resolvePreviewProps } = await import('../dist/index.js');
+  const controlled = { ...entry, propControls: {
+    label: { type: 'text', defaultValue: 'Continue' },
+    disabled: { type: 'boolean', defaultValue: false },
+    size: { type: 'select', defaultValue: 'Small', options: ['Small', 'Large'] },
+    radius: { type: 'number', defaultValue: 8, min: 0, max: 32 },
+  }, stateProps: { Disabled: { disabled: true } } };
+  const selected = resolveSelection([controlled], new URLSearchParams({ state: 'Disabled', props: JSON.stringify({ label: 'Save & close', disabled: false, size: 'Bogus', radius: 100, injected: 'bad' }) }));
+  assert.deepEqual(resolvePreviewProps(controlled, selected), { label: 'Save & close', disabled: false, size: 'Small', radius: 8 });
+  const query = new URL(previewUrl('/design', controlled, selected), 'http://localhost').searchParams;
+  assert.deepEqual(resolvePreviewProps(controlled, resolveSelection([controlled], query)), resolvePreviewProps(controlled, selected));
+  assert.deepEqual(resolvePreviewProps(controlled, resolveSelection([controlled], new URLSearchParams('state=Disabled&props=invalid'))), { label: 'Continue', disabled: true, size: 'Small', radius: 8 });
+  assert.deepEqual(validateCatalog([controlled]), []);
+  assert.match(validateCatalog([{ ...controlled, stateProps: { Missing: { radius: -1 } } }]).join(' '), /Unknown property preset state.*Invalid preset property/);
+  assert.equal(resolveSelection([entry], new URLSearchParams({ props: '{"label":"ignored"}' })).props, undefined);
+});
+
+test('empty catalog explains setup and the preview controls explain their meaning', () => {
+  const empty = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[] }));
+  assert.match(empty, /Bring your first component/);
+  assert.match(empty, /design-workbench add --all/);
+  const html = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[entry] }));
+  assert.match(html, /Share/);
+  assert.doesNotMatch(html, /Copy link|Link copied/);
+  assert.match(html, /How to use this preview/);
+});

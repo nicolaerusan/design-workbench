@@ -4,3 +4,4 @@ export type { WorkbenchControls, ControlButtonProps, ControlSelectProps, Navigat
 export * from './model.ts';
 export { patternGardenReferences } from './pattern-garden.ts';
 export type { PatternGardenSource } from './pattern-garden.ts';
+export { SetupGuide } from './setup-guide.tsx';

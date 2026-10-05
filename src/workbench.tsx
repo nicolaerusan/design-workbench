@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { defaultControls, type WorkbenchControls } from './controls.tsx';
 import type { NavigationPreviewProps } from './controls.tsx';
+import { Properties } from './properties.tsx';
+import { SetupGuide } from './setup-guide.tsx';
 import { ContextPanel } from './contexts.tsx';
 import { designsFor, previewUrl, resolveSelection, safeReferenceUrl } from './model.ts';
 import type {
@@ -23,6 +25,8 @@ export interface WorkbenchProps {
   coverage?: CoverageItem[];
   basePath: string;
   scopeNote?: string;
+  /** CLI can supply commands appropriate to its installation. */
+  setupCommand?: string;
 }
 export function Workbench({
   project,
@@ -33,6 +37,7 @@ export function Workbench({
   coverage = [],
   basePath,
   scopeNote,
+  setupCommand,
 }: WorkbenchProps) {
   const { Button, Input, Select } = controls;
   const NavigationPreview = controls.NavigationPreview ?? PlainNavigationItem;
@@ -63,6 +68,11 @@ export function Workbench({
   const [reset, setReset] = useState(0);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(false), 2200);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
   const [showCoverage, setShowCoverage] = useState(false);
   const [showNav, setShowNav] = useState(false);
   const [ready, setReady] = useState(false);
@@ -88,8 +98,10 @@ export function Workbench({
     return () => { document.removeEventListener('keydown', onTab); menu?.focus(); };
   }, [mobile, showNav]);
   useEffect(() => {
-    const restore = () =>
+    const restore = () => {
       setSelection(resolveSelection(entries, new URLSearchParams(window.location.search)));
+      setCopied(false);
+    };
     restore();
     setReady(true);
     window.addEventListener('popstate', restore);
@@ -108,16 +120,17 @@ export function Workbench({
   }, []);
   const entry = entries.find((item) => item.id === selection.component);
   if (!entry)
-    return <div className="dw-workbench">Add an entry to your workbench manifest to begin.</div>;
+    return <SetupGuide command={setupCommand} />;
   const designs = designsFor(entry);
   const design = designs.find((item) => item.id === selection.design) ?? designs[0];
-  const update = (patch: Partial<Selection>) => {
+  const update = (patch: Partial<Selection>, replace = false) => {
+    if (patch.component !== undefined || patch.state !== undefined) patch = { ...patch, props: '' };
     const next = resolveSelection(entries, new URLSearchParams({ ...selection, ...patch }));
     setSelection(next);
     setReset(0);
     setCopied(false);
     setCopyError('');
-    window.history.pushState(null, '', `${basePath}?${new URLSearchParams({ ...next })}`);
+    window.history[replace ? 'replaceState' : 'pushState'](null, '', `${basePath}?${new URLSearchParams({ ...next })}`);
   };
   const groups = [...new Set(entries.map((item) => item.group))];
   const filtered = entries.filter((item) =>
@@ -311,7 +324,7 @@ export function Workbench({
               <div className="dw-toolbar-field"><span>Viewport</span><Select aria-label="Viewport" value={selection.viewport} onValueChange={(viewport) => update({ viewport })} options={[{value:'fit',label:'Fit panel'},{value:'375',label:'375 · Mobile'},{value:'768',label:'768 · Tablet'},{value:'1280',label:'1280 · Desktop'}]} /></div>
               <span className="dw-toolbar-spacer" />
               {!!entry.contexts?.length && <a className="dw-open" href="#dw-contexts">Contexts · {entry.contexts.length}</a>}
-              <Button variant="ghost" onClick={() => setReset((value) => value + 1)}><WorkbenchIcon name="reset" /> Reset</Button>
+              <Button variant="ghost" title="Restart the preview with the current properties" onClick={() => setReset((value) => value + 1)}><WorkbenchIcon name="reset" /> Reset</Button>
               {designs.length > 1 && (
                 <Button variant="ghost" aria-pressed={compare} onClick={() => setCompare((value) => !value)}>
                   Compare ideas
@@ -329,11 +342,22 @@ export function Workbench({
                   }
                 }}
                 variant="outline"
+                title="Copy a link to this preview. Local links require the same project running on your machine."
+                aria-live="polite"
               >
-                <WorkbenchIcon name="link" /> {copied ? 'Link copied' : 'Copy link'}
+                <WorkbenchIcon name="link" /> {copied ? 'Copied' : 'Share'}
               </Button>
             </div>
             {copyError && <p role="status" className="dw-copy-error">{copyError}</p>}
+            <details className="dw-preview-help"><summary>How to use this preview</summary><dl>
+              <div><dt>Designs</dt><dd>Alternative visual directions for the same component. Compare them side by side.</dd></div>
+              <div><dt>States</dt><dd>Named examples, such as Loading or Disabled. Selecting a state resets property overrides to that preset.</dd></div>
+              <div><dt>Properties</dt><dd>Individual values such as label, size, and disabled. Changes affect previews and shared links, not application source.</dd></div>
+              <div><dt>Status</dt><dd>Exploration is an idea. Source preview has no verified usage. Used in app means the manifest includes reviewed source evidence.</dd></div>
+              <div><dt>Viewport</dt><dd>The preview’s width in pixels. Use it to check responsive layouts.</dd></div>
+              <div><dt>Share</dt><dd>Copy the current selection and properties. A localhost link works only where this project’s server is running.</dd></div>
+            </dl></details>
+            <Properties entry={entry} selection={selection} controls={controls} onChange={props => update({ props: JSON.stringify(props) }, true)} />
             <div className="dw-preview-caption"><span>{design.name}</span>{designs.length === 1 && <Status idea={design} />}<span>{design.description}</span></div>
             <div className={`dw-previews ${compare ? 'dw-compare' : ''}`}>
               {ready ? (

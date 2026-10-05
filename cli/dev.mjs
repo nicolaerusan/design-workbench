@@ -8,7 +8,14 @@ import { readConfig } from './setup.mjs';
 
 export async function startDev(root, { port = 7070 } = {}) {
   root = await fs.realpath(root);
-  const config = await readConfig(root);
+  const configFile = path.join(root, '.design-workbench/config.json');
+  const catalogFile = path.join(root, '.design-workbench/catalog.ts');
+  const exists = file => fs.access(file).then(() => true, error => { if (error.code === 'ENOENT') return false; throw error; });
+  const shellQuote = value => "'" + value.replaceAll("'", "'\\''") + "'";
+  const cliFile = fileURLToPath(new URL('./index.mjs', import.meta.url));
+  const setupCommand = await exists(path.join(root, 'node_modules/.bin/design-workbench'))
+    ? 'npx --no-install design-workbench'
+    : `node ${shellQuote(cliFile)} --cwd ${shellQuote(root)}`;
   const packageRoot = fileURLToPath(new URL('../', import.meta.url));
   const hostRequire = createRequire(path.join(root, 'package.json'));
   const ownRequire = createRequire(import.meta.url);
@@ -33,10 +40,27 @@ export async function startDev(root, { port = 7070 } = {}) {
     plugins: [{
       name: 'design-workbench-entry',
       resolveId(id) { if (id === 'virtual:design-workbench') return '\0virtual:design-workbench'; },
-      load(id) {
-        if (id === '\0virtual:design-workbench') return `export * from ${JSON.stringify(path.join(root, '.design-workbench/catalog.ts'))};\nexport const project = ${JSON.stringify(config.project)};`;
+      async load(id) {
+        if (id !== '\0virtual:design-workbench') return;
+        const hasConfig = await exists(configFile);
+        const config = hasConfig ? await readConfig(root) : { project: path.basename(root) };
+        const needsInit = !hasConfig;
+        const hasCatalog = hasConfig && await exists(catalogFile);
+        if (hasConfig && !hasCatalog) throw new Error('Missing .design-workbench/catalog.ts. Restore the catalog file from your project before loading previews.');
+        return `${hasCatalog ? `export * from ${JSON.stringify(catalogFile)};` : 'export const entries = []; export const renderPreview = () => null;'}
+export const project = ${JSON.stringify(config.project)};
+export const needsInit = ${needsInit};
+export const setupCommand = ${JSON.stringify(setupCommand)};`;
       },
       configureServer(vite) {
+        vite.watcher.add([path.join(root, '.design-workbench'), configFile, catalogFile]);
+        const refreshSetup = file => {
+          if (file !== configFile && file !== catalogFile) return;
+          const module = vite.moduleGraph.getModuleById('\0virtual:design-workbench');
+          if (module) vite.moduleGraph.invalidateModule(module);
+          vite.ws.send({ type: 'full-reload' });
+        };
+        vite.watcher.on('add', refreshSetup).on('change', refreshSetup).on('unlink', refreshSetup);
         // Run before Vite's fallback so all component URLs resolve to our shell.
         vite.middlewares.use(async (req, res, next) => {
           const pathname = (req.url ?? '/').split('?')[0];

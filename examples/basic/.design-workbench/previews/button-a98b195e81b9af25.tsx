@@ -1,6 +1,6 @@
 import React from 'react';
 import * as Source from "../../src/Button.tsx";
-import type { WorkbenchEntry, Selection } from '@design-workbench/react';
+import { resolvePreviewProps, type WorkbenchEntry, type Selection } from '@design-workbench/react';
 
 // Review required props, providers, and side effects before using this fixture.
 const Component = Source["Button"] as React.ComponentType<any>;
@@ -12,10 +12,11 @@ export const entry: WorkbenchEntry = {
   "source": "src/Button.tsx",
   "description": "Draft fixture: review props, providers, and states.",
   "width": 640,
+  propControls: { label: { type: 'text', label: 'Label', defaultValue: 'Click to try', description: 'The button’s visible text.' } },
   "variants": [
     "Default"
   ]
 };
-export function render(_selection: Selection) {
-  return <Component {...fixtureProps} />;
+export function render(selection: Selection) {
+  return <Component {...fixtureProps} {...resolvePreviewProps(entry, selection)} />;
 }

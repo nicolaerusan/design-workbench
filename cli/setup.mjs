@@ -35,25 +35,33 @@ export function renderPreview(selection: import('@design-workbench/react').Selec
 }
 `, { flag: 'wx' });
   await fs.writeFile(path.join(dir, 'previews/welcome.tsx'), `import React from 'react';
-import type { WorkbenchEntry, Selection } from '@design-workbench/react';
+import { resolvePreviewProps, type WorkbenchEntry, type Selection } from '@design-workbench/react';
 export const entry: WorkbenchEntry = {
   id: 'welcome', name: 'Welcome button', group: 'Getting started',
   source: '.design-workbench/previews/welcome.tsx',
   description: 'A working fixture. Add your own components with design-workbench add.',
   width: 400, variants: ['Default', 'Disabled'],
+  propControls: {
+    label: { type: 'text', label: 'Label', defaultValue: 'Your next design', description: 'Text shown on the button.' },
+    disabled: { type: 'boolean', label: 'Disabled', defaultValue: false, description: 'Prevent clicks.' },
+    size: { type: 'select', label: 'Size', defaultValue: 'Medium', options: ['Small', 'Medium', 'Large'] },
+    radius: { type: 'number', label: 'Corner radius', defaultValue: 10, min: 0, max: 32 },
+  },
+  stateProps: { Disabled: { disabled: true } },
   designs: [
     { id: 'solid', name: 'Solid', kind: 'exploration', source: '.design-workbench/previews/welcome.tsx' },
     { id: 'outline', name: 'Outline', kind: 'exploration', source: '.design-workbench/previews/welcome.tsx' },
   ],
 };
 export function render(selection: Selection) {
+  const props = resolvePreviewProps(entry, selection);
   const solid = selection.design === 'solid';
   return <div style={{ padding: 32, fontFamily: 'system-ui' }}>
-    <button disabled={selection.state === 'Disabled'} style={{
-      padding: '12px 20px', borderRadius: 10, border: '1px solid #18181b',
+    <button disabled={props.disabled === true} style={{
+      padding: props.size === 'Small' ? '8px 12px' : props.size === 'Large' ? '16px 28px' : '12px 20px', borderRadius: Number(props.radius), border: '1px solid #18181b',
       background: solid ? '#18181b' : 'white', color: solid ? 'white' : '#18181b',
-      opacity: selection.state === 'Disabled' ? 0.4 : 1,
-    }}>Your next design</button>
+      opacity: props.disabled ? 0.4 : 1,
+    }}>{props.label}</button>
   </div>;
 }
 `, { flag: 'wx' });
@@ -72,6 +80,8 @@ Read config.json, inventory.json, catalog.ts, and previews/ in this directory. F
 7. Rerun design-workbench scan --write after source changes. Keep decisions in fixture files; inventory.json is generated.
 
 ## Design iteration
+
+Declare entry.propControls for editable text, boolean, select, and number values. Use entry.stateProps for named presets and resolvePreviewProps(entry, selection) in render to apply preset values and URL overrides.
 
 Keep earlier implementations while exploring named alternatives. Use entry.designs for visual directions and entry.variants for fixture states. In render(selection), choose the implementation and props using selection.design and selection.state. Record references alongside each design, compare panels, and inspect parent compositions using entry.contexts. Verify production usage against actual render sites before adding productionUsage.
 

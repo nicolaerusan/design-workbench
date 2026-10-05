@@ -95,6 +95,7 @@ test('standalone Vite serves catalog, imported component, and isolated routes wi
   assert.match(component.code, /fixtureProps/);
   const blocked = await fetch(`${base}/.env`);
   assert.notEqual(blocked.status, 200);
+  await server.close();
 });
 
 test('CLI reports invalid arguments and emits machine-readable scan output', async t => {
@@ -105,4 +106,21 @@ test('CLI reports invalid arguments and emits machine-readable scan output', asy
   assert.throws(() => execFileSync(process.execPath, [cli.pathname, 'add', '--cwd', root], { stdio: 'pipe' }), error => {
     assert.match(error.stderr.toString(), /Use add/); return true;
   });
+});
+
+test('dev serves setup guidance before init and can discover setup created while running', async t => {
+  const root = await fixture(t);
+  const server = await startDev(root, { port: 0 });
+  t.after(() => server.close());
+  const initial = await server.transformRequest('virtual:design-workbench');
+  assert.match(initial.code, /needsInit = true/);
+  assert.match(initial.code, /setupCommand/);
+  assert.match(initial.code, /entries = \[\]/);
+  await initialize(root);
+  // The watcher invalidates on new setup files; explicitly invalidate here to avoid timing assumptions.
+  server.moduleGraph.invalidateAll();
+  const configured = await server.transformRequest('virtual:design-workbench');
+  assert.match(configured.code, /needsInit = false/);
+  assert.match(configured.code, /catalog.ts/);
+  await server.close();
 });

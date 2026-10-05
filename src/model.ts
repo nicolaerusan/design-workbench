@@ -1,3 +1,11 @@
+export type PreviewProps = Record<string, string | number | boolean>;
+export type PropControl = { label?: string; description?: string } & (
+  | { type: 'text'; defaultValue: string }
+  | { type: 'boolean'; defaultValue: boolean }
+  | { type: 'number'; defaultValue: number; min?: number; max?: number }
+  | { type: 'select'; defaultValue: string; options: string[] }
+);
+
 export interface DesignReference {
   title: string;
   url?: string;
@@ -28,6 +36,8 @@ export interface WorkbenchEntry {
   width: number;
   designs?: DesignIdea[];
   contexts?: ComponentContext[];
+  propControls?: Record<string, PropControl>;
+  stateProps?: Record<string, PreviewProps>;
 }
 /** App-owned relationships to real, registered composition previews. */
 export interface ComponentContext {
@@ -51,6 +61,8 @@ export interface Selection {
   design: string;
   state: string;
   viewport: string;
+  /** Validated JSON property overrides, shared with preview URLs. */
+  props?: string;
 }
 export function designsFor(entry: WorkbenchEntry): DesignIdea[] {
   return entry.designs?.length
@@ -61,7 +73,9 @@ export function resolveSelection(entries: WorkbenchEntry[], query: URLSearchPara
   const entry = entries.find((item) => item.id === query.get('component')) ?? entries[0];
   if (!entry) return { component: '', design: '', state: '', viewport: 'fit' };
   const designs = designsFor(entry);
+  const overrides = propertyOverrides(entry, query.get('props') ?? undefined);
   return {
+    ...(Object.keys(overrides).length ? { props: JSON.stringify(overrides) } : {}),
     component: entry.id,
     design: designs.find((item) => item.id === query.get('design'))?.id ?? designs[0].id,
     state: entry.variants.find((state) => state === query.get('state')) ?? entry.variants[0],
@@ -76,7 +90,10 @@ export function previewUrl(
   selection: Selection,
   design = selection.design,
 ): string {
-  return `${basePath.replace(/\/$/, '')}/${encodeURIComponent(entry.id)}?${new URLSearchParams({ design, state: selection.state })}`;
+  const query = new URLSearchParams({ design, state: selection.state });
+  const props = propertyOverrides(entry, selection.props);
+  if (Object.keys(props).length) query.set('props', JSON.stringify(props));
+  return `${basePath.replace(/\/$/, '')}/${encodeURIComponent(entry.id)}?${query}`;
 }
 export function validateCatalog(entries: WorkbenchEntry[]): string[] {
   const errors: string[] = [];
@@ -87,6 +104,16 @@ export function validateCatalog(entries: WorkbenchEntry[]): string[] {
     if (ids.has(entry.id)) errors.push(`Duplicate component ID: ${entry.id}`);
     ids.add(entry.id);
     if (!entry.variants.length) errors.push(`No states: ${entry.id}`);
+    for (const [name, control] of Object.entries(entry.propControls ?? {})) {
+      if (['__proto__', 'constructor', 'prototype'].includes(name) || !validProp(control, control.defaultValue)) errors.push(`Invalid property control: ${entry.id}/${name}`);
+      if (control.type === 'select' && (!control.options.length || new Set(control.options).size !== control.options.length)) errors.push(`Invalid property options: ${entry.id}/${name}`);
+    }
+    for (const [state, props] of Object.entries(entry.stateProps ?? {})) {
+      if (!entry.variants.includes(state)) errors.push(`Unknown property preset state: ${entry.id}/${state}`);
+      for (const [name, value] of Object.entries(props)) {
+        if (!Object.hasOwn(entry.propControls ?? {}, name) || !validProp(entry.propControls![name], value)) errors.push(`Invalid preset property: ${entry.id}/${state}/${name}`);
+      }
+    }
     const contextIds = new Set<string>();
     for (const context of entry.contexts ?? []) {
       const prefix = `Context ${entry.id}/${context.id}`;
@@ -119,4 +146,33 @@ export function safeReferenceUrl(value: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+function validProp(control: PropControl, value: unknown): value is string | number | boolean {
+  switch (control.type) {
+    case 'text': return typeof value === 'string' && value.length <= 2000;
+    case 'boolean': return typeof value === 'boolean';
+    case 'select': return typeof value === 'string' && control.options.includes(value);
+    case 'number': return typeof value === 'number' && Number.isFinite(value) && (control.min === undefined || value >= control.min) && (control.max === undefined || value <= control.max);
+    default: return false;
+  }
+}
+function filterProps(entry: WorkbenchEntry, input: unknown): PreviewProps {
+  const output: PreviewProps = {};
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return output;
+  for (const [name, control] of Object.entries(entry.propControls ?? {})) {
+    if (['__proto__', 'constructor', 'prototype'].includes(name) || !Object.hasOwn(input, name)) continue;
+    const value = (input as Record<string, unknown>)[name];
+    if (validProp(control, value)) output[name] = value;
+  }
+  return output;
+}
+function propertyOverrides(entry: WorkbenchEntry, json?: string): PreviewProps {
+  if (!json || json.length > 16000) return {};
+  try { return filterProps(entry, JSON.parse(json)); } catch { return {}; }
+}
+/** Defaults < selected state preset < validated URL overrides. Apply these in the host fixture. */
+export function resolvePreviewProps(entry: WorkbenchEntry, selection: Selection): PreviewProps {
+  const defaults = Object.fromEntries(Object.entries(entry.propControls ?? {}).map(([name, control]) => [name, control.defaultValue]));
+  return { ...filterProps(entry, defaults), ...filterProps(entry, entry.stateProps?.[selection.state]), ...propertyOverrides(entry, selection.props) };
 }
