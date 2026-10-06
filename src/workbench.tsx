@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { defaultControls, type WorkbenchControls } from './controls.tsx';
 import { NavigationPreview as DefaultNavigationPreview } from './navigation-preview.tsx';
 import { PreviewInspector } from './preview-inspector.tsx';
+import { VariantGuide } from './variant-guide.tsx';
 import { SetupGuide } from './setup-guide.tsx';
 import { ContextPanel } from './contexts.tsx';
 import { designsFor, previewUrl, resolveSelection, safeReferenceUrl } from './model.ts';
@@ -360,11 +361,11 @@ export function Workbench({
           </section>
         ) : (
           <>
-            {designs.length > 1 && <section className="dw-designs" aria-label="Design ideas">
+            {designs.length > 1 && <section className="dw-designs" aria-label="Design variants">
               <div className="dw-section-label">
-                Designs{' '}
+                Variants{' '}
                 <span>
-                  {designs.length} {designs.length === 1 ? 'design' : 'ideas'}
+                  {designs.length} directions
                 </span>
               </div>
               <div className="dw-design-list">
@@ -382,9 +383,10 @@ export function Workbench({
 
                   </Button>
                 ))}
-                <Button variant="ghost" className="dw-compare-toggle" aria-pressed={compare} onClick={() => setCompare(value => !value)}>Compare ideas</Button>
+                <Button variant="ghost" className="dw-compare-toggle" aria-pressed={compare} onClick={() => setCompare(value => !value)}>Compare variants</Button>
               </div>
             </section>}
+            <VariantGuide key={entry.id} entry={entry} design={design} command={setupCommand} />
             <PreviewInspector projectId={projectId} entry={entry} selection={selection} controls={controls}
               onViewportChange={viewport => update({ viewport })} onReset={() => setReset(value => value + 1)}
               onStateChange={state => update({ state })} onPropsChange={props => update({ props: JSON.stringify(props) }, true)}>

@@ -80,6 +80,7 @@ test('standalone Vite serves catalog, imported component, and isolated routes wi
   const root = await fixture(t);
   await initialize(root);
   const [added] = await addComponents(root, { all: true });
+  for (const name of ['.env', '.npmrc', '.netrc']) await fs.writeFile(path.join(root, name), 'sensitive-fixture');
   const server = await startDev(root, { port: 0 });
   t.after(() => server.close());
   const base = `http://127.0.0.1:${server.httpServer.address().port}`;
@@ -93,8 +94,13 @@ test('standalone Vite serves catalog, imported component, and isolated routes wi
   const component = await server.transformRequest('/' + added.file);
   assert.match(component.code, /Button.tsx/);
   assert.match(component.code, /fixtureProps/);
-  const blocked = await fetch(`${base}/.env`);
-  assert.notEqual(blocked.status, 200);
+  for (const name of ['.env', '.npmrc', '.netrc']) {
+    const blocked = await fetch(`${base}/${name}`);
+    assert.notEqual(blocked.status, 200);
+    assert.doesNotMatch(await blocked.text(), /sensitive-fixture/);
+  }
+  const crossOrigin = await fetch(base, { headers: { Origin: 'https://untrusted.example' } });
+  assert.equal(crossOrigin.headers.get('access-control-allow-origin'), null);
   await server.close();
 });
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { resolvePreviewProps, type WorkbenchEntry, type Selection } from '@design-workbench/react';
+import { resolvePreviewProps, type WorkbenchEntry, type Selection } from 'designbench';
 export const entry: WorkbenchEntry = {
   id: 'welcome', name: 'Welcome button', group: 'Getting started',
   source: '.design-workbench/previews/welcome.tsx',

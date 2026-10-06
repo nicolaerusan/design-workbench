@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "component": "button-a98b195e81b9af25",
+  "id": "ink",
+  "name": "Ink",
+  "source": "src/Button.tsx",
+  "exportName": "Button",
+  "baseHash": "63f8cf21e13071fa6bd047854fc36e6ce994ff33fae7ce89fb74dce8320fd39b",
+  "createdAt": "2026-10-06T22:20:10.610Z"
+}

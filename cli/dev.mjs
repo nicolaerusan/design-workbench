@@ -13,8 +13,8 @@ export async function startDev(root, { port = 7070 } = {}) {
   const exists = file => fs.access(file).then(() => true, error => { if (error.code === 'ENOENT') return false; throw error; });
   const shellQuote = value => "'" + value.replaceAll("'", "'\\''") + "'";
   const cliFile = fileURLToPath(new URL('./index.mjs', import.meta.url));
-  const setupCommand = await exists(path.join(root, 'node_modules/.bin/design-workbench'))
-    ? 'npx --no-install design-workbench'
+  const setupCommand = await exists(path.join(root, 'node_modules/.bin/designbench'))
+    ? 'npx --no-install designbench'
     : `node ${shellQuote(cliFile)} --cwd ${shellQuote(root)}`;
   const packageRoot = fileURLToPath(new URL('../', import.meta.url));
   const hostRequire = createRequire(path.join(root, 'package.json'));
@@ -33,8 +33,8 @@ export async function startDev(root, { port = 7070 } = {}) {
     publicDir: false,
     cacheDir: path.join(os.tmpdir(), 'design-workbench-vite', createHash('sha256').update(packageRoot + root).digest('hex').slice(0, 16)),
     resolve: { tsconfigPaths: true, alias: [
-      { find: '@design-workbench/react/styles.css', replacement: path.join(packageRoot, 'src/styles.css') },
-      { find: '@design-workbench/react', replacement: path.join(packageRoot, 'dist/index.js') },
+      { find: 'designbench/styles.css', replacement: path.join(packageRoot, 'src/styles.css') },
+      { find: 'designbench', replacement: path.join(packageRoot, 'dist/index.js') },
       ...reactAliases,
     ] },
     plugins: [{
@@ -47,7 +47,12 @@ export async function startDev(root, { port = 7070 } = {}) {
         const needsInit = !hasConfig;
         const hasCatalog = hasConfig && await exists(catalogFile);
         if (hasConfig && !hasCatalog) throw new Error('Missing .design-workbench/catalog.ts. Restore the catalog file from your project before loading previews.');
-        return `${hasCatalog ? `export * from ${JSON.stringify(catalogFile)};` : 'export const entries = []; export const renderPreview = () => null;'}
+        return `${hasCatalog ? `import { entries as sourceEntries, renderPreview as renderSource } from ${JSON.stringify(catalogFile)};
+import { withVariants } from ${JSON.stringify(path.join(packageRoot, 'dist/index.js'))};
+const modules = import.meta.glob('/.design-workbench/ideas/*/*/index.tsx', { eager: true });
+const catalog = withVariants(sourceEntries, renderSource, Object.values(modules));
+export const entries = catalog.entries;
+export const renderPreview = catalog.renderPreview;` : 'export const entries = []; export const renderPreview = () => null;'}
 export const project = ${JSON.stringify(config.project)};
 export const needsInit = ${needsInit};
 export const setupCommand = ${JSON.stringify(setupCommand)};`;
@@ -74,7 +79,7 @@ export const setupCommand = ${JSON.stringify(setupCommand)};`;
         });
       },
     }],
-    server: { host: '127.0.0.1', port, strictPort: true, fs: { strict: true, allow: [root, packageRoot] } },
+    server: { host: '127.0.0.1', port, strictPort: true, cors: false, fs: { strict: true, allow: [root, packageRoot], deny: ['.env', '.env.*', '*.pem', '*.crt', '**/.git/**', '**/.npmrc', '**/.netrc', '**/.ssh/**'] } },
   });
   await server.listen();
   return server;

@@ -1,14 +1,16 @@
 {
-  "name": "@design-workbench/react",
-  "version": "0.2.0",
+  "name": "designbench",
+  "version": "0.3.0",
   "description": "React component design workbench for AI-assisted iteration, side-by-side variants, and Pattern Garden references",
   "type": "module",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "files": [
     "dist",
     "src",
     "README.md",
-    "cli"
+    "cli",
+    "SECURITY.md",
+    "docs"
   ],
   "exports": {
     ".": {
@@ -51,6 +53,7 @@
     "pattern-garden"
   ],
   "bin": {
+    "designbench": "./cli/index.mjs",
     "design-workbench": "./cli/index.mjs"
   },
   "engines": {
@@ -69,5 +72,9 @@
     "react-resizable-panels": "^3.0.6",
     "typescript": "^5.9.3",
     "vite": "^8.3.1"
-  }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "Nicolae Rusan"
 }

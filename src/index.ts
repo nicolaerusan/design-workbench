@@ -5,3 +5,5 @@ export * from './model.ts';
 export { patternGardenReferences } from './pattern-garden.ts';
 export type { PatternGardenSource } from './pattern-garden.ts';
 export { SetupGuide } from './setup-guide.tsx';
+export { withVariants } from './variants.ts';
+export type { SavedVariant } from './variants.ts';

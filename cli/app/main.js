@@ -1,7 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Workbench, resolveSelection, validateCatalog } from '@design-workbench/react';
-import '@design-workbench/react/styles.css';
+import { Workbench, resolveSelection, validateCatalog } from 'designbench';
+import 'designbench/styles.css';
 import { entries, renderPreview, project, needsInit, setupCommand } from 'virtual:design-workbench';
 
 class PreviewBoundary extends React.Component {

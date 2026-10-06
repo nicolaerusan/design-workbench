@@ -318,3 +318,9 @@
 .dw-component-tile p { color: var(--dw-muted); font-size: 12px; line-height: 1.6; margin: 8px 0 18px; flex: 1; }
 .dw-component-tile code { font-size: 10px; color: #8a8a83; overflow-wrap: anywhere; }
 @media (max-width: 700px) { .dw-component-overview { padding-inline: 16px; } }
+
+.dw-variant-guide { flex: 0 0 auto; border-bottom: 1px solid var(--dw-border, #e4e4e7); }
+.dw-variant-instructions { padding: 0 24px 18px; max-height: 300px; overflow: auto; font-size: 13px; }
+.dw-variant-instructions p { line-height: 1.6; max-width: 85ch; }
+.dw-variant-instructions pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+.dw-agent-prompt { color: #71717a; font-size: 12px; overflow-wrap: anywhere; }

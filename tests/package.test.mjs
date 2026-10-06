@@ -29,7 +29,7 @@ test('properties apply defaults, state presets, and only validated shared overri
 test('empty catalog explains setup and the preview controls explain their meaning', () => {
   const empty = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[] }));
   assert.match(empty, /Bring your first component/);
-  assert.match(empty, /design-workbench add --all/);
+  assert.match(empty, /designbench add --all/);
   const html = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[entry], initialSelection:{ component:'button', design:'current', state:'Default', viewport:'fit' } }));
   assert.match(html, /Share/);
   assert.doesNotMatch(html, /Copy link|Link copied/);

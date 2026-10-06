@@ -1,6 +1,6 @@
 import React from 'react';
 import * as Source from "../../src/Button.tsx";
-import { resolvePreviewProps, type WorkbenchEntry, type Selection } from '@design-workbench/react';
+import { resolvePreviewProps, type WorkbenchEntry, type Selection } from 'designbench';
 
 // Review required props, providers, and side effects before using this fixture.
 const Component = Source["Button"] as React.ComponentType<any>;

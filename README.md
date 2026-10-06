@@ -4,9 +4,15 @@
 
 The vision is a richer workspace for human–agent design iteration, inspired by component tools like Storybook, with deep integration with [Pattern Garden](https://pattern.garden) for inspiration from a universal component library. **Storybook is not required:** DesignBench has its own catalog and preview runtime.
 
-The product is called **DesignBench**. Package names, CLI commands, configuration paths, and the repository still use `design-workbench` for compatibility during development.
+The package and executable are **designbench**. Project files stay in `.design-workbench/`; the older `design-workbench` executable remains an alias.
 
-> **Early development.** `@design-workbench/react` provides the React catalog, comparison UI, and a standalone CLI. The workbench was extracted from Day.new and is used by HomeBase. The CLI runs client React previews through Vite; existing applications can still provide their own preview routes. The repository is private and the package has not been published to npm. Direct Pattern Garden library access, site-indexing requests, and built-in AI orchestration are planned.
+> **Early preview · MIT licensed.** Client React previews run through Vite, with source-copied shadcn/ui controls and Lucide icons. Direct Pattern Garden library access, site-indexing requests, and built-in AI orchestration remain planned. npm publication is pending account authentication; the GitHub release install below works independently of npm publication.
+
+## Why we built this
+
+Working with an AI coding agent makes it easy to ask for another direction. Keeping those directions around, comparing them in a real browser, and deciding what should actually ship should be just as easy.
+
+We wanted a small bench beside the product: the real component on one side, several editable alternatives on the other, with shared properties and states. Use your coding environment's annotation mode to point at a preview, describe what should change, and ask the agent to make another variant. Keep the useful ideas in Git, then adopt one deliberately. DesignBench provides the workspace and files; your existing agent does the coding. It does not include its own annotation overlay or require a model API key.
 
 ## What works today
 
@@ -43,17 +49,31 @@ Selecting a design only changes the preview. It does not change application impo
 
 ## Getting started
 
-The intended published install is a development dependency with an executable:
+### Install the GitHub preview
+
+In an existing React project:
 
 ```sh
-# After the first npm release (not available yet):
-npm install --save-dev @design-workbench/react
-npx design-workbench init
-npx design-workbench add --all
-npx design-workbench dev
+npm install --save-dev https://github.com/nicolaerusan/design-workbench/releases/download/v0.3.0/designbench-0.3.0.tgz
+npx designbench init
+npx designbench add --all
+npx designbench dev
 ```
 
-For a one-off start after publication, `npx @design-workbench/react init` will invoke the same executable. A pinned project dependency is the recommended ongoing workflow so a team's CLI version is recorded in its lockfile. The shorter unscoped `npx design-workbench` package name is not reserved or published by this project.
+Open `http://127.0.0.1:7070`. Keep the server running, and review generated fixtures for required props, providers, and styles. Commit your lockfile and `.design-workbench/`.
+
+### npm / npx install (pending first registry publication)
+
+Once `designbench` is published to npm, the same flow starts with:
+
+```sh
+npm install --save-dev designbench
+npx designbench init
+npx designbench add --all
+npx designbench dev
+```
+
+For a one-off start, `npx designbench@0.3.0 init` will run the published CLI. A pinned development dependency is recommended for teams. The npm name is not reserved until publication succeeds; do not use these registry commands before the release is announced.
 
 ### Try it now from this repository
 
@@ -65,7 +85,7 @@ npm test
 node cli/index.mjs dev --cwd examples/basic
 ```
 
-Open `http://127.0.0.1:7070`. The example includes an imported interactive component and two comparable design directions. Node 20.19+ or 22.12+ is required (Node 21 is excluded).
+Open `http://127.0.0.1:7070`. The example includes an imported interactive button with two saved alternatives, Ink and Soft, plus a welcome fixture with property and state controls. Node 20.19+ or 22.12+ is required (Node 21 is excluded).
 
 To use it in another React project before the npm release:
 
@@ -74,11 +94,11 @@ To use it in another React project before the npm release:
 npm pack
 
 # In your host project:
-npm install --save-dev /absolute/path/to/design-workbench/design-workbench-react-0.2.0.tgz
-npx design-workbench init
-npx design-workbench scan
-npx design-workbench add 'src/components/Button.tsx#Button'
-npx design-workbench dev
+npm install --save-dev /absolute/path/to/design-workbench/designbench-0.3.0.tgz
+npx designbench init
+npx designbench scan
+npx designbench add 'src/components/Button.tsx#Button'
+npx designbench dev
 ```
 
 React and React DOM 18.2 or 19 are peers. The package includes compiled ESM, TypeScript declarations, CSS, source, and the CLI. TypeScript and Vite are used by the CLI, not imported by the React UI. The `development` export points to TypeScript source; the default export is compiled JavaScript.
@@ -89,13 +109,13 @@ React and React DOM 18.2 or 19 are peers. The package includes compiled ESM, Typ
 
 ```sh
 # Limit discovery or use a monorepo package:
-npx design-workbench init --cwd apps/web --source src/components --source src/features
+npx designbench init --cwd apps/web --source src/components --source src/features
 
 # Refresh generated inventory after source changes:
-npx design-workbench scan --write
+npx designbench scan --write
 
 # Create draft fixtures for every discovered candidate:
-npx design-workbench add --all
+npx designbench add --all
 ```
 
 Discovery parses JavaScript/TypeScript syntax without executing source. It recognizes exported PascalCase functions, React component classes, and common `memo`/`forwardRef` wrappers. Default source directories are `src`, `app`, `components`, and `pages`. Tests, declarations, build output, dependencies, hidden directories, and symlinks are excluded. Existing story files are reported as context but not imported automatically. Barrel re-exports, custom higher-order components, and dynamic exports are not resolved.
@@ -114,17 +134,53 @@ Give your coding agent this request:
 
 > Read .design-workbench/AGENT.md and inventory.json. Review the discovered components, add preview fixtures for the useful ones, supply representative props and providers, and verify the previews in the browser. Preserve existing design directions and add new alternatives separately.
 
-`entry.designs` holds visual directions; `entry.variants` holds states. The fixture's `render(selection)` selects an implementation and its props. The generated guide explains context previews, reference provenance, and production evidence. The CLI works without a model API key; the agent runs in your existing editor or coding environment.
+`entry.designs` holds visual directions; `entry.variants` holds states. The fixture's `render(selection)` selects an implementation and its props. The generated guide explains saved variants, context previews, reference provenance, and production evidence. The CLI works without a model API key; the agent runs in your existing editor or coding environment.
+
+### Create, compare, and promote variants
+
+Use the stable component ID from its preview URL and the actual source export:
+
+```sh
+npx designbench variant create button-a98b195e81b9af25 soft \
+  --from 'src/Button.tsx#Button' --name 'Soft'
+```
+
+This creates project-owned files:
+
+```text
+.design-workbench/ideas/button-a98b195e81b9af25/soft/
+  component.tsx     # Copy of the complete original source file
+  index.tsx         # Preview renderer, with fixture props/providers as needed
+  variant.json     # Source path, export, identity, and original source hash
+```
+
+Edit the copied implementation or ask your agent to do so. The standalone runner discovers it automatically. Toggle between the source and alternatives, or choose **Compare variants**. They share state presets, properties, and viewport settings. Commit the whole folder to retain history. Delete a variant folder to remove it from the catalog.
+
+Every component includes **Create a variant → Copy agent instructions**. The generated `.design-workbench/AGENT.md` explains creation, fixture setup, comparison, and adoption. Selecting a preview does not modify the app. The **Source preview** is the baseline from its source file; production usage is only labeled when a maintainer has supplied reviewed evidence.
+
+To adopt a saved direction:
+
+```sh
+# Show the replacement diff; no source write:
+npx designbench variant promote button-a98b195e81b9af25 soft
+
+# After reviewing the diff and checking the component:
+npx designbench variant promote button-a98b195e81b9af25 soft --apply
+```
+
+Promotion replaces the complete original file, rebases relative imports, and keeps a `before-promotion.*` backup beside the variant. It stops if source changed since creation, the public export disappeared, or a target is a symlink or outside the project. Run your application's checks and review the Git diff after adoption. Use Git or the backup to restore the original. Existing variants then need manual reconciliation against the changed source.
+
+This first version promotes **one source file**. Additional dependencies, sibling files, fixture props, and parent composition wiring need explicit edits. Dynamic module paths and `import.meta` require manual setup. Saved files are trusted project code; these checks are not a sandbox for downloaded variants.
 
 ### Embed in an existing application
 
-The React API remains available if your host already supplies preview routes, as Day.new and HomeBase do. This path uses the host's runtime and fixtures instead of the standalone server.
+The React API remains available if your host already supplies preview routes. This path uses the host's runtime and fixtures instead of the standalone server.
 
 ### Register and mount components
 
 ```tsx
-import { Workbench, validateCatalog, type WorkbenchEntry } from '@design-workbench/react';
-import '@design-workbench/react/styles.css';
+import { Workbench, validateCatalog, type WorkbenchEntry } from 'designbench';
+import 'designbench/styles.css';
 
 export const entries: WorkbenchEntry[] = [{
   id: 'primary-button',
@@ -168,6 +224,8 @@ export function DesignPage() {
 }
 ```
 
+For embedded hosts, merge saved modules with `withVariants(entries, renderSource, modules)` and use the returned `entries` and `renderPreview` in both routes. Automatic filesystem discovery is specific to the standalone CLI.
+
 `designs` are alternative implementations; `variants` are fixture or interaction states such as Default, Disabled, Loading, or Empty. A component without explicit designs receives a single `current` source preview. Keep component and design IDs stable when renaming them.
 
 ### Provide the preview route
@@ -201,7 +259,7 @@ stateProps: { Disabled: { disabled: true } },
 Apply them in the fixture renderer:
 
 ```tsx
-import { resolvePreviewProps } from '@design-workbench/react';
+import { resolvePreviewProps } from 'designbench';
 const props = resolvePreviewProps(entry, selection);
 return <Button {...fixtureProps} {...props} />;
 ```
@@ -252,7 +310,7 @@ Pass `controls: WorkbenchControls` to use your own `Button`, `Input`, `Textarea`
 
 Optional `coverage: CoverageItem[]` and `scopeNote` describe your component inventory. The React UI consumes host-provided coverage. The CLI discovers candidates, but does not label them as verified coverage.
 
-Manifest designs and references live in your project files. Browser-created notes are stored under `projectId/componentId/designId` and can be exported as JSON; there is no shared backend or automatic manifest writeback. Remote reference images are not loaded automatically. Drawing and screenshot annotations are planned possibilities, not implemented features.
+Manifest designs and references live in your project files. Browser-created notes are stored under `projectId/componentId/designId` and can be exported as JSON; there is no shared backend or automatic manifest writeback. Remote reference images are not loaded automatically. Use annotation tools supplied by your coding environment; DesignBench does not provide its own drawing or screenshot annotation overlay.
 
 ## Pattern Garden
 
@@ -261,7 +319,7 @@ Manifest designs and references live in your project files. Browser-created note
 ### Available now: reference metadata adapter
 
 ```ts
-import { patternGardenReferences } from '@design-workbench/react';
+import { patternGardenReferences } from 'designbench';
 
 // Supply these values from a real capture manifest or integration.
 const references = patternGardenReferences({
@@ -277,7 +335,7 @@ const references = patternGardenReferences({
 // Assign references to a design's `references` field.
 ```
 
-The helper accepts normalized metadata and creates HTTP(S) reference links. It performs no network requests, authentication, capture, or component import. HomeBase already uses this boundary with a synced Pattern Garden reference manifest.
+The helper accepts normalized metadata and creates HTTP(S) reference links. It performs no network requests, authentication, capture, or component import. A host can supply this metadata from its own synced capture manifest.
 
 Pattern Garden captures describe rendered evidence such as screenshots, DOM, and styles. They should not be presented as recovered original React source. A future import should preserve provenance, capture limitations, and the distinction between reference material and a new local implementation.
 
@@ -301,8 +359,10 @@ These are product requirements, not available API methods. The library transport
 - [ ] Expand discovery and framework adapters based on real host projects. Storybook interoperability can be added later if useful.
 - [ ] Connect Pattern Garden universal-library search and reference retrieval.
 - [ ] Add site-indexing requests and status tracking.
-- [ ] Add agent-driven variant creation, durable iteration history, and feedback handoff.
-- [ ] Choose an open-source license and publish the repository and package.
+- [x] Add agent instructions, saved variant files, automatic discovery, and guarded single-file promotion.
+- [ ] Expand multi-file adoption and shared feedback handoff.
+- [x] Adopt the MIT license.
+- [ ] Complete the first npm registry publication.
 
 ## Development
 
@@ -313,7 +373,7 @@ npm test
 npm pack --dry-run
 ```
 
-`npm test` compiles the package and checks React rendering, selection URLs, catalog validation, Pattern Garden link safety, CLI argument handling, component discovery, preservation of authored fixtures, and standalone server routes. Browser interaction checks are currently manual. GitHub Actions runs typechecking, tests, and a package dry run; account billing must permit Actions jobs to start.
+`npm test` compiles the package and checks React rendering, selection URLs, catalog validation, Pattern Garden link safety, CLI argument handling, component discovery, preservation of authored fixtures, and standalone server routes. Browser interaction checks are currently manual. GitHub Actions runs typechecking, tests, and a package dry run.
 
 | File | Purpose |
 | --- | --- |
@@ -322,7 +382,7 @@ npm pack --dry-run
 | `src/workbench.tsx` | Catalog UI, preview panels, navigation, references, and feedback. |
 | `src/model.ts` | Public data model, selection helpers, URLs, and catalog validation. |
 | `src/contexts.tsx` | Parent composition previews and reverse component relationships. |
-| `src/controls.tsx` | Native controls and host control-adapter interfaces. |
+| `src/controls.tsx` | shadcn/ui defaults and host control-adapter interfaces. |
 | `src/pattern-garden.ts` | Capture-metadata-to-reference adapter. |
 | `src/styles.css` | Workbench styling. |
 | `tests/package.test.mjs` | Package smoke and model tests. |
@@ -331,4 +391,6 @@ This project began as the design catalog in Day.new. HomeBase is the first consu
 
 ## License and release status
 
-Intended for open-source release; private during initial development. The package retains its existing `UNLICENSED` designation until an open-source license is selected. No npm registry release has been made. Before publishing: confirm npm scope ownership, choose a license, verify a clean tarball install, and then publish explicitly. Repository setup and local packaging do not publish to the registry.
+[MIT](./LICENSE). Copied shadcn/ui components retain their [upstream MIT attribution](./src/ui/LICENSE.md).
+
+Version 0.3.0 is an early preview. npm publication is pending account authentication. The GitHub release tarball supports local installation and the npx commands above. See [SECURITY.md](./SECURITY.md) for the local development trust boundary and [release review](./docs/release-review-0.3.0.md) for validation and limitations.
