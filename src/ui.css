@@ -48,3 +48,10 @@
 .db-kbd { pointer-events: none; display: inline-flex; height: 20px; min-width: 20px; align-items: center; justify-content: center; gap: 4px; border-radius: 4px; background: #f0f0ed; padding: 0 4px; font: 500 11px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color: #73736e; user-select: none; }
 .db-kbd svg { width: 12px; height: 12px; }
 .db-kbd-group { display: inline-flex; align-items: center; gap: 4px; }
+.db-breadcrumb-list { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; padding: 0; list-style: none; color: #73736e; font-size: 12px; overflow-wrap: anywhere; }
+.db-breadcrumb-item { display: inline-flex; align-items: center; gap: 6px; }
+.db-breadcrumb-link:hover { color: #20201e; text-decoration: underline; text-underline-offset: 3px; }
+.db-breadcrumb-page { color: #73736e; font-weight: 400; }
+.db-breadcrumb-separator { display: inline-flex; color: #a1a19a; }
+.db-breadcrumb-separator svg { width: 13px; height: 13px; }
+.db-breadcrumb-ellipsis { display: flex; width: 36px; height: 36px; align-items: center; justify-content: center; }

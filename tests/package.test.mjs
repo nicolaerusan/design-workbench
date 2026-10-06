@@ -30,7 +30,7 @@ test('empty catalog explains setup and the preview controls explain their meanin
   const empty = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[] }));
   assert.match(empty, /Bring your first component/);
   assert.match(empty, /design-workbench add --all/);
-  const html = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[entry] }));
+  const html = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[entry], initialSelection:{ component:'button', design:'current', state:'Default', viewport:'fit' } }));
   assert.match(html, /Share/);
   assert.doesNotMatch(html, /Copy link|Link copied/);
   assert.doesNotMatch(html, /How to use this preview/);
@@ -50,4 +50,21 @@ test('empty and uninitialized workbenches retain project navigation and setup co
   const uninitialized = renderToStaticMarkup(createElement(Workbench, { ...props, needsInit:true }));
   assert.match(uninitialized, /Set up your workbench/);
   assert.match(uninitialized, /node .\/tools\/bench.mjs init/);
+});
+
+test('page navigation distinguishes overview, component links, and setup with retained selection', async () => {
+  const { resolveWorkbenchPage } = await import('../dist/navigation.js');
+  const page = (query, entries = [entry], needsInit = false) => resolveWorkbenchPage(entries, new URLSearchParams(query), needsInit);
+  assert.equal(page(''), 'overview');
+  assert.equal(page('component=button&state=Disabled'), 'components');
+  assert.equal(page('component=button&view=setup'), 'setup');
+  assert.equal(page('component=button&view=components'), 'overview');
+  assert.equal(page('component=missing'), 'overview');
+  assert.equal(page('', []), 'setup');
+  assert.equal(page('component=button', [entry], true), 'setup');
+  const html = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[entry] }));
+  assert.match(html, /aria-label="Component overview"/);
+  assert.match(html, /aria-label="Breadcrumb"/);
+  assert.match(html, /href="\/design\?component=button"/);
+  assert.doesNotMatch(html, /Resize properties panel/);
 });

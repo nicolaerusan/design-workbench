@@ -303,3 +303,18 @@
 .dw-setup-card .dw-setup-note { margin: 18px 0; font-size: 11px; }
 .dw-setup { overflow: auto; }
 @media (max-width: 700px) { .dw-setup-content { padding-inline: 16px; } }
+
+.dw-breadcrumb { display: inline-flex; max-width: calc(100% - 45px); vertical-align: middle; }
+.dw-nav .dw-all-components { justify-content: flex-start; gap: 9px; margin-top: 8px; font-size: 12px; }
+.dw-component-overview { flex: 1; min-height: 0; overflow: auto; padding: 10px 24px 32px; }
+.dw-overview-group { margin-bottom: 28px; }
+.dw-overview-group h2 { font-size: 12px; font-weight: 500; color: var(--dw-muted); margin: 0 0 12px; }
+.dw-component-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(min(100%,260px),1fr)); gap: 12px; }
+.dw-component-tile { display: flex; flex-direction: column; min-width: 0; padding: 18px; border: 1px solid var(--dw-line); border-radius: 12px; background: white; }
+.dw-component-tile:hover { background: #fafaf9; border-color: #c7c7c0; }
+.dw-component-tile-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.dw-component-tile-title strong { font-size: 14px; font-weight: 600; }
+.dw-component-tile-title svg { color: var(--dw-muted); flex-shrink: 0; }
+.dw-component-tile p { color: var(--dw-muted); font-size: 12px; line-height: 1.6; margin: 8px 0 18px; flex: 1; }
+.dw-component-tile code { font-size: 10px; color: #8a8a83; overflow-wrap: anywhere; }
+@media (max-width: 700px) { .dw-component-overview { padding-inline: 16px; } }
