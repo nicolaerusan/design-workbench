@@ -154,9 +154,9 @@ This creates project-owned files:
   variant.json     # Source path, export, identity, and original source hash
 ```
 
-Edit the copied implementation or ask your agent to do so. The standalone runner discovers it automatically. Toggle between the source and alternatives, or choose **Compare variants**. They share state presets, properties, and viewport settings. Commit the whole folder to retain history. Delete a variant folder to remove it from the catalog.
+Edit the copied implementation or ask your agent to do so. The standalone runner discovers it automatically. Toggle between the source and alternatives above the preview, or choose **Compare all**. They share state presets, properties, and viewport settings. Commit the whole folder to retain history. Delete a variant folder to remove it from the catalog.
 
-Every component includes **Create a variant → Copy agent instructions**. The generated `.design-workbench/AGENT.md` explains creation, fixture setup, comparison, and adoption. Selecting a preview does not modify the app. The **Source preview** is the baseline from its source file; production usage is only labeled when a maintainer has supplied reviewed evidence.
+Every component includes **Variants → Copy agent instructions** in the inspector. The generated `.design-workbench/AGENT.md` explains creation, fixture setup, comparison, and adoption. Selecting a preview does not modify the app. The **Source preview** is the baseline from its source file; production usage is only labeled when a maintainer has supplied reviewed evidence.
 
 To adopt a saved direction:
 
@@ -296,11 +296,11 @@ Register `checkout-form` and its `Ready` state first. Context `design` and `stat
 
 **Setup** stays at the bottom of the project sidebar. It provides the run, scan, and add commands and a short usage guide. Empty catalogs open Setup automatically; projects without CLI configuration also show the init command. The Setup URL can be bookmarked, and browser Back returns to the previous component.
 
-The **Properties & states** inspector groups state presets and editable values beside the preview. Collapse it to gain canvas space, or use the docking buttons to stack it below the preview or place it on the right. Drag the divider vertically or horizontally to resize it; arrow keys adjust the focused divider, and double-click resets its size. Position, size, and collapsed state are remembered locally per project. Viewport and Reset live inside the inspector; Share sits beside the component name. Narrow panels automatically stack it below. Changing the layout preserves the running preview; changing a state preset clears property overrides. Edited presets show **Modified**.
+The inspector sits on the right of the preview by default, with three tabs: **Properties** (state presets and editable values), **Feedback** (references, design source, and usage contexts), and **Variants** (agent instructions and promotion). The layout toggle at the top right of the page places it below the preview or on the right; choosing the active position again hides it to give the canvas the full width. Drag the divider vertically or horizontally to resize it; arrow keys adjust the focused divider, and double-click resets its size. Position and size are remembered locally per project. Viewport and Reset sit in the toolbar above the preview, next to the variant picker; Share and Preview sit in the top bar. Narrow panels automatically stack the inspector below. Changing the layout preserves the running preview; changing a state preset clears property overrides. **Preview** opens the component alone in a new tab; embedded browsers that do not support new tabs, such as some editor previews, open it in place.
 
 ### UI foundation
 
-The default UI uses source-copied **shadcn/ui** components with **Lucide** icons. Buttons, inputs, textareas, selects, checkboxes, hover cards, tooltips, collapsibles, and the preview/inspector splitter use these local components. Their source and MIT attribution live in `src/ui`. Namespaced CSS replaces Tailwind utilities so host projects do not need a Tailwind setup. Layout, catalog logic, and host-specific adapters remain ordinary React.
+The default UI uses source-copied **shadcn/ui** components with **Lucide** icons. Buttons, inputs, textareas, selects, checkboxes, hover cards, tooltips, tabs, toggle groups, and the preview/inspector splitter use these local components. Their source and MIT attribution live in `src/ui`. The UI is set in Geist and Geist Mono, bundled in `src/fonts` under the SIL Open Font License; a host that already provides Geist through `--font-geist-sans` keeps its own copy. Namespaced CSS replaces Tailwind utilities so host projects do not need a Tailwind setup. Layout, catalog logic, and host-specific adapters remain ordinary React.
 
 The selected **Trestle** logo is available as editable SVG in `design/brand/designbench.svg`; the other studies remain in that folder.
 

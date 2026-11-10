@@ -35,7 +35,11 @@ test('empty catalog explains setup and the preview controls explain their meanin
   assert.doesNotMatch(html, /Copy link|Link copied/);
   assert.doesNotMatch(html, /How to use this preview/);
   assert.match(html, /State preset/);
-  assert.match(html, /Resize properties panel/);
+  assert.match(html, /Resize inspector panel/);
+  assert.match(html, /aria-label="Inspector layout"/);
+  assert.match(html, /role="tab"[^>]*>Feedback</);
+  assert.match(html, /role="tab"[^>]*>Variants</);
+  assert.match(html, /target="_blank"/);
 });
 
 test('empty and uninitialized workbenches retain project navigation and setup commands', () => {
@@ -66,5 +70,16 @@ test('page navigation distinguishes overview, component links, and setup with re
   assert.match(html, /aria-label="Component overview"/);
   assert.match(html, /aria-label="Breadcrumb"/);
   assert.match(html, /href="\/design\?component=button"/);
-  assert.doesNotMatch(html, /Resize properties panel/);
+  assert.doesNotMatch(html, /Resize inspector panel/);
+});
+
+test('bundled fonts referenced by the stylesheet ship with the package', async () => {
+  const { readFile, access } = await import('node:fs/promises');
+  const css = await readFile(new URL('../src/styles.css', import.meta.url), 'utf8');
+  const fonts = [...css.matchAll(/url\('(\.\/fonts\/[^']+)'\)/g)].map(match => match[1]);
+  assert.ok(fonts.length >= 2);
+  for (const font of fonts) await access(new URL(`../src/${font.slice(2)}`, import.meta.url));
+  await access(new URL('../src/fonts/OFL.txt', import.meta.url));
+  const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  assert.ok(manifest.files.includes('src'));
 });

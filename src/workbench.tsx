@@ -4,12 +4,11 @@ import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbP
 import { Kbd, KbdGroup } from './ui/kbd.tsx';
 import { DesignBenchMark } from './brand.tsx';
 import { PanelLeft, ArrowUpRight, RotateCcw, Link2, ChevronRight, BookOpen, LayoutGrid } from 'lucide-react';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from './ui/collapsible.tsx';
-import { TooltipProvider } from './ui/tooltip.tsx';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip.tsx';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { defaultControls, type WorkbenchControls } from './controls.tsx';
 import { NavigationPreview as DefaultNavigationPreview } from './navigation-preview.tsx';
-import { PreviewInspector } from './preview-inspector.tsx';
+import { InspectorViewToggle, PreviewInspector, useInspectorView } from './preview-inspector.tsx';
 import { VariantGuide } from './variant-guide.tsx';
 import { SetupGuide } from './setup-guide.tsx';
 import { ContextPanel } from './contexts.tsx';
@@ -110,6 +109,7 @@ export function Workbench({
   const [shortcutModifier, setShortcutModifier] = useState('⌘');
   useEffect(() => { setShortcutModifier(/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'); }, []);
   const [compare, setCompare] = useState(false);
+  const [inspectorView, setInspectorView] = useInspectorView(projectId);
   const [reset, setReset] = useState(0);
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState('');
@@ -272,7 +272,6 @@ export function Workbench({
                     }}
                   >
                     {item.name}
-                    <span aria-hidden="true">•</span>
                   </a>
                   </NavigationPreview>
                 ))}
@@ -315,10 +314,11 @@ export function Workbench({
         />}
       </aside>
       <main className="dw-main" inert={mobile && showNav ? true : undefined}>
-        <header className="dw-header">
-          <div>
+        <header className="dw-topbar">
+          <div className="dw-topbar-start">
             <Button
               ref={menuRef}
+              variant="ghost"
               className="dw-menu"
               aria-label="Toggle component list"
               aria-expanded={mobile ? showNav : !collapsed}
@@ -333,29 +333,34 @@ export function Workbench({
               <BreadcrumbItem>{showingOverview ? <BreadcrumbPage>Components</BreadcrumbPage> : <BreadcrumbLink href={basePath} onClick={navigateOverview}>Components</BreadcrumbLink>}</BreadcrumbItem>
               {!showingOverview && <><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbPage>{showingSetup ? 'Setup' : showCoverage ? 'Coverage & gaps' : entry?.name}</BreadcrumbPage></BreadcrumbItem></>}
             </BreadcrumbList></Breadcrumb>
-            <div className="dw-title-row"><h1>{showingSetup ? 'Setup' : showingOverview ? 'Components' : showCoverage ? 'Coverage & gaps' : entry?.name}</h1>{showingComponent && entry && <div className="dw-title-actions">              <Button
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(window.location.href);
-                    setCopied(true);
-                    setCopyError('');
-                  } catch {
-                    setCopied(false);
-                    setCopyError('Could not copy. The preview URL is in your address bar.');
-                  }
-                }}
-                variant="ghost"
-                title="Copy a link to this preview. Local links require the same project running on your machine."
-                aria-live="polite"
-              >
-                <WorkbenchIcon name="link" /> {copied ? 'Copied' : 'Share'}
-              </Button>
-<a className="dw-open" href={previewUrl(basePath, entry, selection)} target="_blank" rel="noreferrer">Preview <WorkbenchIcon name="external" /></a></div>}</div>
-            {showingComponent && <p>{entry?.description}</p>}
-            {showingOverview && <p>Browse your components and explore their designs.</p>}
           </div>
-
+          {showingComponent && entry && <div className="dw-topbar-actions">
+            <Tooltip><TooltipTrigger asChild><Button
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(window.location.href);
+                  setCopied(true);
+                  setCopyError('');
+                } catch {
+                  setCopied(false);
+                  setCopyError('Could not copy. The preview URL is in your address bar.');
+                }
+              }}
+              variant="ghost"
+              aria-live="polite"
+            >
+              <WorkbenchIcon name="link" /><span className="dw-action-label">{copied ? 'Copied' : 'Share'}</span>
+            </Button></TooltipTrigger><TooltipContent>Copy a link to this preview. Local links need the same project running.</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><a className="dw-open" href={previewUrl(basePath, entry, selection)} target="_blank" rel="noopener noreferrer"><span className="dw-action-label">Preview</span><WorkbenchIcon name="external" /></a></TooltipTrigger><TooltipContent>Open the preview on its own in a new tab</TooltipContent></Tooltip>
+            <span className="dw-topbar-divider" aria-hidden="true" />
+            <InspectorViewToggle view={inspectorView} onViewChange={setInspectorView} />
+          </div>}
         </header>
+        <div className="dw-header">
+          <h1>{showingSetup ? 'Setup' : showingOverview ? 'Components' : showCoverage ? 'Coverage & gaps' : entry?.name}</h1>
+          {showingComponent && <p>{entry?.description}</p>}
+          {showingOverview && <p>Browse your components and explore their designs.</p>}
+        </div>
         {showingComponent && copyError && <p role="status" className="dw-copy-error">{copyError}</p>}
         {showingSetup ? <SetupGuide embedded needsInit={needsInit} empty={!entries.length} command={setupCommand} /> : showingOverview ? (
           <section className="dw-component-overview" aria-label="Component overview">
@@ -397,37 +402,64 @@ export function Workbench({
             </ul>
           </section>
         ) : (
-          <>
-            {designs.length > 1 && <section className="dw-designs" aria-label="Design variants">
-              <div className="dw-section-label">
-                Variants{' '}
-                <span>
-                  {designs.length} directions
-                </span>
-              </div>
-              <div className="dw-design-list">
+          <PreviewInspector projectId={projectId} entry={entry} selection={selection} controls={controls}
+            view={inspectorView} onViewChange={setInspectorView}
+            onViewportChange={viewport => update({ viewport })} onReset={() => setReset(value => value + 1)}
+            onStateChange={state => update({ state })} onPropsChange={props => update({ props: JSON.stringify(props) }, true)}
+            toolbar={designs.length > 1 ? (
+              <div className="dw-design-list" role="group" aria-label="Design variants">
                 {designs.map((idea) => (
                   <Button
                     key={idea.id}
                     variant="ghost"
                     className="dw-design-choice"
                     title={idea.description}
-                    aria-pressed={idea.id === design.id}
-                    onClick={() => update({ design: idea.id })}
+                    aria-pressed={!compare && idea.id === design.id}
+                    onClick={() => { setCompare(false); update({ design: idea.id }); }}
                   >
-                    <strong>{idea.name}</strong>
-                    <Status idea={idea} />
-
+                    {idea.name}
                   </Button>
                 ))}
-                <Button variant="ghost" className="dw-compare-toggle" aria-pressed={compare} onClick={() => setCompare(value => !value)}>Compare variants</Button>
+                <Button variant="ghost" className="dw-design-choice" aria-pressed={compare} onClick={() => setCompare(value => !value)}>Compare all</Button>
               </div>
-            </section>}
-            <VariantGuide key={entry.id} entry={entry} design={design} command={setupCommand} />
-            <PreviewInspector projectId={projectId} entry={entry} selection={selection} controls={controls}
-              onViewportChange={viewport => update({ viewport })} onReset={() => setReset(value => value + 1)}
-              onStateChange={state => update({ state })} onPropsChange={props => update({ props: JSON.stringify(props) }, true)}>
-            <div className="dw-preview-caption"><span>{design.name}</span>{designs.length === 1 && <Status idea={design} />}<span>{design.description}</span></div>
+            ) : (
+              <div className="dw-preview-caption" title={design.description}><span>{design.name}</span><Status idea={design} /></div>
+            )}
+            panels={[
+              { id: 'feedback', label: 'Feedback', content: <div className="dw-feedback-panel">
+                <ReferencePanel
+                  key={`${entry.id}/${design.id}`}
+                  controls={controls}
+                  storageKey={`design-workbench:${projectId}:${entry.id}:${design.id}`}
+                  references={design.references ?? []}
+                />
+                <section className="dw-details" aria-label="Design source">
+                  <h2>Design source</h2>
+                  <code>{design.source}</code>
+                  {design.productionUsage?.length ? (
+                    <>
+                      <h3>Used in the app</h3>
+                      <ul>
+                        {design.productionUsage.map((usage) => (
+                          <li key={`${usage.file}-${usage.symbol}`}>
+                            <code>{usage.file}</code> → <code>{usage.symbol}</code>
+                            <p>{usage.description}</p>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="dw-note">
+                        Source evidence is maintained in project configuration. Preview selection does
+                        not change imports or ship a design.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="dw-note">No production usage is claimed for this design.</p>
+                  )}
+                </section>
+                <ContextPanel key={`contexts:${entry.id}`} entry={entry} entries={entries} basePath={basePath} controls={controls} navigate={update} />
+              </div> },
+              { id: 'variants', label: 'Variants', content: <VariantGuide key={entry.id} entry={entry} design={design} command={setupCommand} /> },
+            ]}>
             <div className={`dw-previews ${compare ? 'dw-compare' : ''}`}>
               {ready ? (
                 compare ? (
@@ -439,43 +471,7 @@ export function Workbench({
                 <p className="dw-empty">Loading preview…</p>
               )}
             </div>
-            </PreviewInspector>
-            <Collapsible className="dw-inspector" key={`inspector:${entry.id}`}>
-              <CollapsibleTrigger className="dw-source-trigger"><ChevronRight size={14} aria-hidden="true" />Source, references &amp; feedback <span>Inspect this design</span></CollapsibleTrigger><CollapsibleContent>
-            <ContextPanel key={`contexts:${entry.id}`} entry={entry} entries={entries} basePath={basePath} controls={controls} navigate={(next) => { update(next); window.scrollTo({ top: 0 }); }} />
-            <section className="dw-details">
-              <div>
-                <div className="dw-section-label">Design source</div>
-                <code>{design.source}</code>
-                {design.productionUsage?.length ? (
-                  <>
-                    <h3>Used in the app</h3>
-                    <ul>
-                      {design.productionUsage.map((usage) => (
-                        <li key={`${usage.file}-${usage.symbol}`}>
-                          <code>{usage.file}</code> → <code>{usage.symbol}</code>
-                          <p>{usage.description}</p>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="dw-note">
-                      Source evidence is maintained in project configuration. Preview selection does
-                      not change imports or ship a design.
-                    </p>
-                  </>
-                ) : (
-                  <p className="dw-note">No production usage is claimed for this design.</p>
-                )}
-              </div>
-              <ReferencePanel
-                key={`${entry.id}/${design.id}`}
-                controls={controls}
-                storageKey={`design-workbench:${projectId}:${entry.id}:${design.id}`}
-                references={design.references ?? []}
-              />
-            </section>
-            </CollapsibleContent></Collapsible>
-          </>
+          </PreviewInspector>
         ))}
       </main>
     </div></TooltipProvider>
