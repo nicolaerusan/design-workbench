@@ -51,11 +51,17 @@ export async function startDev(root, { port = 7070 } = {}) {
 import { withVariants } from ${JSON.stringify(path.join(packageRoot, 'dist/index.js'))};
 const modules = import.meta.glob('/.design-workbench/ideas/*/*/index.tsx', { eager: true });
 const catalog = withVariants(sourceEntries, renderSource, Object.values(modules));
-export const entries = catalog.entries;
+// Generated fixtures are named after their entry; listing them does not import anything.
+const fixtureFiles = new Set(Object.keys(import.meta.glob('/.design-workbench/previews/*.tsx')).map(file => file.slice(1)));
+export const entries = catalog.entries.map(entry => {
+  const fixture = '.design-workbench/previews/' + entry.id + '.tsx';
+  return !entry.fixture && fixtureFiles.has(fixture) ? { ...entry, fixture } : entry;
+});
 export const renderPreview = catalog.renderPreview;` : 'export const entries = []; export const renderPreview = () => null;'}
 export const project = ${JSON.stringify(config.project)};
 export const needsInit = ${needsInit};
-export const setupCommand = ${JSON.stringify(setupCommand)};`;
+export const setupCommand = ${JSON.stringify(setupCommand)};
+export const projectRoot = ${JSON.stringify(root)};`;
       },
       configureServer(vite) {
         vite.watcher.add([path.join(root, '.design-workbench'), configFile, catalogFile]);

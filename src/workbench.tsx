@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { defaultControls, type WorkbenchControls } from './controls.tsx';
 import { NavigationPreview as DefaultNavigationPreview } from './navigation-preview.tsx';
 import { InspectorViewToggle, PreviewInspector, useInspectorView } from './preview-inspector.tsx';
+import { CodePanel, type SourceAccess } from './code-panel.tsx';
 import { VariantGuide } from './variant-guide.tsx';
 import { SetupGuide } from './setup-guide.tsx';
 import { ContextPanel } from './contexts.tsx';
@@ -36,6 +37,8 @@ export interface WorkbenchProps {
   setupCommand?: string;
   /** The standalone CLI has not created its project configuration yet. */
   needsInit?: boolean;
+  /** Lets the Code tab show file contents and open files in an editor. The CLI supplies this. */
+  sourceAccess?: SourceAccess;
 }
 /** A live, non-interactive miniature of an entry's default preview. */
 function TileThumbnail({ title, url, width }: { title: string; url: string; width: number }) {
@@ -67,6 +70,7 @@ export function Workbench({
   scopeNote,
   setupCommand,
   needsInit = false,
+  sourceAccess,
 }: WorkbenchProps) {
   const { Button, Input } = controls;
   const NavigationPreview = controls.NavigationPreview ?? DefaultNavigationPreview;
@@ -426,39 +430,19 @@ export function Workbench({
               <div className="dw-preview-caption" title={design.description}><span>{design.name}</span><Status idea={design} /></div>
             )}
             panels={[
+              { id: 'code', label: 'Code', content: <CodePanel key={entry.id} entry={entry} designs={designs} active={design} compare={compare}
+                access={sourceAccess} onSelect={id => { setCompare(false); update({ design: id }); }} /> },
+              { id: 'variants', label: 'Variants', content: <VariantGuide key={entry.id} entry={entry} design={design} command={setupCommand} /> },
               { id: 'feedback', label: 'Feedback', content: <div className="dw-feedback-panel">
                 <ReferencePanel
                   key={`${entry.id}/${design.id}`}
                   controls={controls}
+                  designName={designs.length > 1 ? design.name : undefined}
                   storageKey={`design-workbench:${projectId}:${entry.id}:${design.id}`}
                   references={design.references ?? []}
                 />
-                <section className="dw-details" aria-label="Design source">
-                  <h2>Design source</h2>
-                  <code>{design.source}</code>
-                  {design.productionUsage?.length ? (
-                    <>
-                      <h3>Used in the app</h3>
-                      <ul>
-                        {design.productionUsage.map((usage) => (
-                          <li key={`${usage.file}-${usage.symbol}`}>
-                            <code>{usage.file}</code> → <code>{usage.symbol}</code>
-                            <p>{usage.description}</p>
-                          </li>
-                        ))}
-                      </ul>
-                      <p className="dw-note">
-                        Source evidence is maintained in project configuration. Preview selection does
-                        not change imports or ship a design.
-                      </p>
-                    </>
-                  ) : (
-                    <p className="dw-note">No production usage is claimed for this design.</p>
-                  )}
-                </section>
                 <ContextPanel key={`contexts:${entry.id}`} entry={entry} entries={entries} basePath={basePath} controls={controls} navigate={update} />
               </div> },
-              { id: 'variants', label: 'Variants', content: <VariantGuide key={entry.id} entry={entry} design={design} command={setupCommand} /> },
             ]}>
             <div className={`dw-previews ${compare ? 'dw-compare' : ''}`}>
               {ready ? (
@@ -492,10 +476,12 @@ function Status({ idea }: { idea: DesignIdea }) {
 }
 function ReferencePanel({
   controls,
+  designName,
   storageKey,
   references,
 }: {
   controls: WorkbenchControls;
+  designName?: string;
   storageKey: string;
   references: DesignReference[];
 }) {
@@ -531,7 +517,7 @@ function ReferencePanel({
   };
   return (
     <div className="dw-references">
-      <div className="dw-section-label">References & feedback</div>
+      <div className="dw-section-label">References & feedback{designName && <span>for {designName}</span>}</div>
       <p className="dw-note">
         Attach a reference link or describe a direction for this idea. Browser notes stay on this
         machine; export them to share with your agent.

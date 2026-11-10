@@ -7,3 +7,4 @@ export type { PatternGardenSource } from './pattern-garden.ts';
 export { SetupGuide } from './setup-guide.tsx';
 export { withVariants } from './variants.ts';
 export type { SavedVariant } from './variants.ts';
+export type { SourceAccess } from './code-panel.tsx';

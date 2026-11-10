@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { PanelBottom, PanelRight, RotateCcw } from 'lucide-react';
+import { ChevronDown, MonitorSmartphone, PanelBottom, PanelRight, RotateCcw } from 'lucide-react';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 import type { WorkbenchControls } from './controls.tsx';
 import type { PreviewProps, Selection, WorkbenchEntry } from './model.ts';
@@ -9,6 +9,8 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from './ui/resiz
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs.tsx';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group.tsx';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip.tsx';
+import { Button as MenuButton } from './ui/button.tsx';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu.tsx';
 
 /** Where the inspector sits around the preview. */
 export type InspectorView = 'below' | 'right' | 'hidden';
@@ -48,6 +50,32 @@ export function InspectorViewToggle({ view, onViewChange }: { view: InspectorVie
   </ToggleGroup>;
 }
 
+const viewports = [
+  { value: 'fit', label: 'Fit panel', short: 'Fit' },
+  { value: '375', label: '375 · Mobile', short: '375' },
+  { value: '768', label: '768 · Tablet', short: '768' },
+  { value: '1280', label: '1280 · Desktop', short: '1280' },
+];
+/** Canvas view settings: preview width and restarting the preview. */
+function ViewMenu({ viewport, onViewportChange, onReset }: { viewport: string; onViewportChange: (viewport: string) => void; onReset: () => void }) {
+  const current = viewports.find(item => item.value === viewport) ?? viewports[0];
+  return <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <MenuButton variant="outline" className="dw-view-menu-trigger" aria-label={`View options. Viewport: ${current.label}`}>
+        <MonitorSmartphone size={15} aria-hidden="true" />View<span className="dw-view-menu-value">{current.short}</span><ChevronDown size={14} aria-hidden="true" />
+      </MenuButton>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end" className="dw-view-menu">
+      <DropdownMenuLabel>Viewport</DropdownMenuLabel>
+      <DropdownMenuRadioGroup value={current.value} onValueChange={onViewportChange}>
+        {viewports.map(item => <DropdownMenuRadioItem key={item.value} value={item.value}>{item.label}</DropdownMenuRadioItem>)}
+      </DropdownMenuRadioGroup>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onSelect={onReset}><RotateCcw size={15} aria-hidden="true" /><span>Reset preview<small>Restart with the current properties</small></span></DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>;
+}
+
 export function PreviewInspector({ children, toolbar, panels = [], view: controlledView, onViewChange, projectId, entry, selection, controls, onStateChange, onPropsChange, onViewportChange, onReset }: {
   children: ReactNode; projectId: string; entry: WorkbenchEntry; selection: Selection; controls: WorkbenchControls;
   onStateChange: (state: string) => void; onPropsChange: (props: PreviewProps) => void;
@@ -59,7 +87,7 @@ export function PreviewInspector({ children, toolbar, panels = [], view: control
   /** Control the position from elsewhere, such as a page header. Uncontrolled inspectors show their own toggle. */
   view?: InspectorView; onViewChange?: (view: InspectorView) => void;
 }) {
-  const { Button, Select } = controls;
+  const { Select } = controls;
   const [ownView, setOwnView] = useInspectorView(projectId);
   const controlled = controlledView !== undefined;
   const view = controlledView ?? ownView;
@@ -109,8 +137,7 @@ export function PreviewInspector({ children, toolbar, panels = [], view: control
           <div className="dw-stage-toolbar">
             <div className="dw-stage-toolbar-start">{toolbar}</div>
             <div className="dw-stage-toolbar-end">
-              <label className="dw-viewport"><span>Viewport</span><Select aria-label="Viewport" value={selection.viewport} onValueChange={onViewportChange} options={[{ value: 'fit', label: 'Fit panel' }, { value: '375', label: '375 · Mobile' }, { value: '768', label: '768 · Tablet' }, { value: '1280', label: '1280 · Desktop' }]} /></label>
-              <Tooltip><TooltipTrigger asChild><Button variant="ghost" className="dw-stage-reset" onClick={onReset}><RotateCcw size={15} aria-hidden="true" /> Reset</Button></TooltipTrigger><TooltipContent>Restart the preview with the current properties</TooltipContent></Tooltip>
+              <ViewMenu viewport={selection.viewport} onViewportChange={onViewportChange} onReset={onReset} />
               {!controlled && <InspectorViewToggle view={view} onViewChange={setView} />}
             </div>
           </div>

@@ -61,3 +61,15 @@
 .db-breadcrumb-separator { display: inline-flex; color: #a1a19a; }
 .db-breadcrumb-separator svg { width: 13px; height: 13px; }
 .db-breadcrumb-ellipsis { display: flex; width: 36px; height: 36px; align-items: center; justify-content: center; }
+
+.db-menu-content { z-index: 120; min-width: 210px; overflow: hidden; padding: 4px; border: 1px solid #e4e4df; border-radius: 8px; background: white; color: #20201e; box-shadow: 0 5px 20px #0002; font: 13px/1.5 var(--dw-font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif); }
+.db-menu-content * { box-sizing: border-box; }
+.db-menu-item { position: relative; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; outline: none; cursor: default; user-select: none; }
+.db-menu-item[data-highlighted] { background: #efefec; }
+.db-menu-item[data-disabled] { opacity: .5; pointer-events: none; }
+.db-menu-item svg { flex-shrink: 0; }
+.db-menu-indented { padding-left: 28px; }
+.db-menu-indicator { position: absolute; left: 8px; display: flex; width: 14px; height: 14px; align-items: center; justify-content: center; }
+.db-icon-dot { width: 7px; height: 7px; fill: currentColor; }
+.db-menu-label { padding: 6px 8px 4px; font-size: 11px; font-weight: 500; color: #73736e; }
+.db-menu-separator { height: 1px; margin: 4px -4px; background: #e8e8e6; }

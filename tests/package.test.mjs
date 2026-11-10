@@ -83,3 +83,17 @@ test('bundled fonts referenced by the stylesheet ship with the package', async (
   const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
   assert.ok(manifest.files.includes('src'));
 });
+
+test('the Code tab lists the files behind the source component and each saved variant', async () => {
+  const { designFiles } = await import('../dist/index.js');
+  const fixtureEntry = { ...entry, fixture: '.design-workbench/previews/button.tsx' };
+  const source = { id: 'current', name: 'Source component', source: 'Button.tsx' };
+  const ink = { id: 'ink', name: 'Ink', kind: 'exploration', source: '.design-workbench/ideas/button/ink/component.tsx' };
+  assert.deepEqual(designFiles(fixtureEntry, source).map(file => file.path), ['Button.tsx', '.design-workbench/previews/button.tsx']);
+  assert.deepEqual(designFiles(fixtureEntry, ink).map(file => file.path), ['component.tsx', 'index.tsx', 'variant.json'].map(name => `.design-workbench/ideas/button/ink/${name}`));
+  assert.deepEqual(designFiles(fixtureEntry, { ...ink, files: [{ path: 'custom.tsx', label: 'Custom' }] }).map(file => file.path), ['custom.tsx']);
+  const html = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[{ ...fixtureEntry, designs:[source, ink] }], initialSelection:{ component:'button', design:'ink', state:'Default', viewport:'fit' } }));
+  assert.match(html, /role="tab"[^>]*>Code</);
+  assert.match(html, /\.design-workbench\/ideas\/button\/ink\/variant\.json/);
+  assert.match(html, /aria-label="View options\. Viewport: Fit panel"/);
+});

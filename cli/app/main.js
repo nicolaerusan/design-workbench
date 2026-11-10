@@ -2,7 +2,15 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Workbench, resolveSelection, validateCatalog } from 'designbench';
 import 'designbench/styles.css';
-import { entries, renderPreview, project, needsInit, setupCommand } from 'virtual:design-workbench';
+import { entries, renderPreview, project, needsInit, setupCommand, projectRoot } from 'virtual:design-workbench';
+
+// The Code tab reads project files through Vite (which applies its serving allow and deny lists)
+// and opens them with Vite's editor launcher.
+const fileUrl = file => '/' + file.split('/').map(encodeURIComponent).join('/');
+const sourceAccess = {
+  read: async file => (await import(/* @vite-ignore */ `${fileUrl(file)}?raw&t=${Date.now()}`)).default,
+  open: file => { fetch('/__open-in-editor?file=' + encodeURIComponent(projectRoot + '/' + file)).catch(() => {}); },
+};
 
 class PreviewBoundary extends React.Component {
   state = { error: null };
@@ -42,5 +50,5 @@ const errors = validateCatalog(entries);
 const root = createRoot(document.getElementById('root'));
 if (errors.length) root.render(React.createElement('pre', null, `Fix the catalog:\n${errors.join('\n')}`));
 else root.render(React.createElement(PreviewBoundary, null,
-  location.pathname === '/' ? React.createElement(React.Fragment, null, React.createElement(ConnectionNotice), React.createElement(Workbench, { entries, project, projectId: project, basePath: '/', setupCommand, needsInit })) : React.createElement(Preview)));
+  location.pathname === '/' ? React.createElement(React.Fragment, null, React.createElement(ConnectionNotice), React.createElement(Workbench, { entries, project, projectId: project, basePath: '/', setupCommand, needsInit, sourceAccess })) : React.createElement(Preview)));
 // Without an HMR acceptance boundary, Vite reloads the page on fixture edits.

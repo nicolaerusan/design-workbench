@@ -3,7 +3,7 @@
 @font-face { font-family: 'DesignBench Geist'; src: url('./fonts/Geist-Variable.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
 @font-face { font-family: 'DesignBench Geist Mono'; src: url('./fonts/GeistMono-Variable.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
 /* Popovers render outside the workbench, so they define the stacks too. A host's own Geist (next/font) takes precedence. */
-.dw-workbench, .dw-hover-preview, .db-select-content, .db-tooltip {
+.dw-workbench, .dw-hover-preview, .db-select-content, .db-tooltip, .db-menu-content {
   --dw-font-sans: var(--font-geist-sans, 'DesignBench Geist'), 'DesignBench Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --dw-font-mono: var(--font-geist-mono, 'DesignBench Geist Mono'), 'DesignBench Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
@@ -321,9 +321,13 @@
 .dw-stage-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; flex-shrink: 0; min-height: 32px; margin-bottom: 12px; }
 .dw-stage-toolbar-start { display: flex; align-items: center; min-width: 0; }
 .dw-stage-toolbar-end { display: flex; align-items: center; gap: 6px; margin-left: auto; }
-.dw-viewport { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--dw-muted); }
-.dw-workbench .dw-stage-toolbar-end > button, .dw-workbench .dw-viewport button { height: 32px; min-height: 32px; }
-.dw-workbench .dw-stage-reset { padding: 0 10px; }
+.dw-workbench .dw-stage-toolbar-end > button { height: 32px; min-height: 32px; }
+.dw-workbench .dw-view-menu-trigger { gap: 6px; padding: 0 8px 0 10px; }
+.dw-workbench .dw-view-menu-trigger[data-state=open] { background: #f3f3f1; }
+.dw-view-menu-value { padding: 0 6px; border-radius: 4px; background: #f0f0ed; color: var(--dw-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.dw-view-menu-trigger > svg:last-child { color: #8a8a83; }
+.dw-view-menu .db-menu-item > span { display: flex; flex-direction: column; }
+.dw-view-menu .db-menu-item small { color: #73736e; font-size: 12px; }
 .dw-preview-caption { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; font-weight: 500; }
 
 /* The inspector: tabbed sections in one panel, beside or below the preview. */
@@ -361,5 +365,44 @@
   .dw-topbar { padding: 0 12px 0 8px; gap: 8px; }
   .dw-topbar-divider { display: none; }
   .dw-breadcrumb .db-breadcrumb-item:not(:last-child), .dw-breadcrumb .db-breadcrumb-separator { display: none; }
-  .dw-viewport > span { display: none; }
 }
+
+/* Code tab: each design and the files behind it. */
+.dw-code > p { margin: 0 0 14px; }
+.dw-tree, .dw-tree ul { list-style: none; margin: 0; padding: 0; }
+.dw-tree-design + .dw-tree-design { margin-top: 8px; }
+.dw-tree-design-row { display: flex; align-items: center; gap: 6px; min-height: 32px; }
+.dw-workbench .dw-tree-toggle { flex: 1; justify-content: flex-start; gap: 6px; min-width: 0; height: 30px; min-height: 30px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; font-weight: 400; text-align: left; }
+.dw-workbench .dw-tree-toggle:hover { background: #efefec; }
+.dw-tree-toggle > svg { flex-shrink: 0; color: #8a8a83; transition: transform 120ms; }
+.dw-tree-toggle[aria-expanded=true] > svg { transform: rotate(90deg); }
+.dw-tree-toggle strong { font-weight: 600; white-space: nowrap; }
+.dw-tree-toggle > span { overflow: hidden; color: var(--dw-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.dw-tree-showing { flex-shrink: 0; padding: 1px 7px; border-radius: 999px; background: #eaf2ec; color: #366750; font-size: 11px; font-weight: 500; }
+.dw-workbench .dw-tree-preview { flex-shrink: 0; height: 26px; min-height: 26px; padding: 0 8px; font-size: 12px; }
+.dw-tree .dw-tree-children { margin-left: 13px; padding-left: 8px; border-left: 1px solid var(--dw-line); }
+.dw-tree-folder { display: flex; align-items: center; gap: 6px; min-width: 0; height: 26px; padding: 0 6px; color: var(--dw-muted); }
+.dw-tree-folder svg, .dw-tree-file svg { flex-shrink: 0; color: #9b9b94; }
+/* Long folder paths keep their meaningful end; the start is elided. */
+.dw-tree-path, .dw-file-view h2 { min-width: 0; overflow: hidden; direction: rtl; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.dw-tree-path { font: 12px/1.4 var(--dw-font-mono); }
+.dw-workbench .dw-tree-file { justify-content: flex-start; gap: 6px; width: 100%; height: 28px; min-height: 28px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; font-weight: 400; text-align: left; }
+.dw-workbench .dw-tree-file:hover { background: #efefec; }
+.dw-tree-name { min-width: 0; overflow: hidden; font: 12px/1.4 var(--dw-font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.dw-tree-role { flex-shrink: 0; margin-left: auto; padding-left: 8px; color: var(--dw-muted); font-size: 12px; }
+.dw-tree-usage { padding: 6px; font-size: 12px; }
+.dw-tree-usage > span { font-weight: 500; }
+.dw-tree-usage p { margin: 4px 0 0; }
+.dw-tree-usage code { font-size: 11px; overflow-wrap: anywhere; }
+.dw-file-view { display: flex; flex-direction: column; min-height: 100%; }
+.dw-workbench .dw-file-back { align-self: flex-start; gap: 6px; height: 28px; min-height: 28px; margin: -4px 0 10px -8px; padding: 0 8px; }
+.dw-controls-panel .dw-file-view h2 { margin: 0 0 4px; font: 500 12px/1.5 var(--dw-font-mono); }
+.dw-file-view > p { margin: 0 0 10px; }
+.dw-file-view > p strong { color: var(--dw-ink); font-weight: 500; }
+.dw-file-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.dw-workbench .dw-file-actions button { gap: 6px; height: 30px; min-height: 30px; padding: 0 10px; font-size: 12px; }
+.dw-code-view { flex: 1; min-height: 160px; margin: 0; overflow: auto; padding: 10px 0; border: 1px solid var(--dw-line); border-radius: 8px; background: white; color: #2d2d2a; font: 12px/1.6 var(--dw-font-mono); tab-size: 2; counter-reset: line; }
+.dw-code-view code { display: block; min-width: max-content; font: inherit; }
+.dw-code-line { display: block; min-height: 1.6em; padding-right: 14px; white-space: pre; }
+.dw-code-line::before { content: counter(line); counter-increment: line; position: sticky; left: 0; display: inline-block; width: 4ch; margin-right: 12px; padding-right: 8px; background: white; color: #b0b0a9; text-align: right; user-select: none; }
+.dw-file-status { padding: 14px; border: 1px dashed var(--dw-line); border-radius: 8px; }
