@@ -349,3 +349,11 @@
 .dw-brand { padding-bottom: 14px; }
 .dw-title-row { min-height: 36px; }
 .dw-workbench .dw-menu { position: relative; top: 2px; }
+
+/* Overview tiles lead with a live miniature of the default preview. */
+.dw-component-tile { padding: 0; overflow: hidden; }
+.dw-tile-thumbnail { position: relative; height: 150px; flex-shrink: 0; overflow: hidden; background: #f5f5f2; border-bottom: 1px solid var(--dw-line); }
+.dw-tile-thumbnail iframe { position: absolute; left: 0; top: 0; border: 0; background: white; transform-origin: top left; pointer-events: none; transition: opacity 160ms; }
+.dw-component-tile-title { padding: 14px 18px 0; }
+.dw-component-tile p { margin: 6px 18px 14px; }
+.dw-component-tile code { padding: 0 18px 16px; }

@@ -38,6 +38,25 @@ export interface WorkbenchProps {
   /** The standalone CLI has not created its project configuration yet. */
   needsInit?: boolean;
 }
+/** A live, non-interactive miniature of an entry's default preview. */
+function TileThumbnail({ title, url, width }: { title: string; url: string; width: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new ResizeObserver(([item]) => setBox(item.contentRect.width));
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+  const naturalWidth = Number.isFinite(width) ? Math.max(400, Math.min(width + 64, 1200)) : 640;
+  const scale = box / naturalWidth;
+  return <div ref={ref} className="dw-tile-thumbnail" aria-hidden="true" inert>
+    {box > 0 && <iframe title={`${title} thumbnail`} src={url} tabIndex={-1} scrolling="no" loading="lazy" allow="camera 'none'; microphone 'none'" onLoad={() => setLoaded(true)}
+      style={{ width: naturalWidth, height: 150 / scale, transform: `scale(${scale})`, opacity: loaded ? 1 : 0 }} />}
+  </div>;
+}
 export function Workbench({
   project,
   controls = defaultControls,
@@ -344,16 +363,16 @@ export function Workbench({
               const items = filtered.filter(item => item.group === group);
               return items.length ? <section className="dw-overview-group" key={group}>
                 <h2>{group}</h2>
-                <div className="dw-component-grid">{items.map(item => <NavigationPreview key={item.id} title={item.name} description={item.description} width={item.width} disabled={mobile}
-                  url={previewUrl(basePath, item, resolveSelection(entries, new URLSearchParams({ component: item.id })))}>
-                  <a className="dw-component-tile" href={`${basePath}?component=${item.id}`} onClick={event => {
+                <div className="dw-component-grid">{items.map(item =>
+                  <a key={item.id} className="dw-component-tile" href={`${basePath}?component=${item.id}`} onClick={event => {
                     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
                     event.preventDefault(); update({ component: item.id, design: '', state: '' }); setShowNav(false);
                   }}>
+                    <TileThumbnail title={item.name} width={item.width}
+                      url={previewUrl(basePath, item, resolveSelection(entries, new URLSearchParams({ component: item.id })))} />
                     <div className="dw-component-tile-title"><strong>{item.name}</strong><ArrowUpRight size={16} aria-hidden="true" /></div>
                     <p>{item.description}</p><code>{item.source}</code>
-                  </a>
-                </NavigationPreview>)}</div>
+                  </a>)}</div>
               </section> : null;
             })}
             {!filtered.length && <p className="dw-empty">No matching components. Try another search.</p>}
