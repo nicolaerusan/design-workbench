@@ -324,3 +324,28 @@
 .dw-variant-instructions p { line-height: 1.6; max-width: 85ch; }
 .dw-variant-instructions pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .dw-agent-prompt { color: #71717a; font-size: 12px; overflow-wrap: anywhere; }
+
+/* Sidebar groups collapse; the chevron and count stay out of the way until hover or focus. */
+.dw-nav h2 { display: block; padding: 0; }
+.dw-workbench .dw-nav-group { display: flex; justify-content: flex-start; gap: 4px; width: 100%; min-height: 28px; padding: 4px 10px; border: 0; border-radius: 8px; background: transparent; color: inherit; font-size: 11px; font-weight: 500; text-align: left; }
+.dw-workbench .dw-nav-group:hover:not(:disabled) { background: #efefec; }
+.dw-workbench .dw-nav-group:disabled { opacity: 1; }
+.dw-nav-group > svg { flex-shrink: 0; opacity: 0; transition: opacity 120ms, transform 120ms; }
+.dw-nav-group[aria-expanded=true] > svg { transform: rotate(90deg); }
+.dw-nav h2 .dw-nav-group-count { margin-left: auto; opacity: 0; transition: opacity 120ms; }
+.dw-nav-group[aria-expanded=false] > svg, .dw-nav-group:focus-visible > svg { opacity: .7; }
+.dw-nav h2 .dw-nav-group:focus-visible .dw-nav-group-count { opacity: .7; }
+@media (hover: hover) { .dw-nav-group:hover:not(:disabled) > svg, .dw-nav h2 .dw-nav-group:hover .dw-nav-group-count { opacity: .7; } }
+.dw-nav section { margin: 12px 0 14px; }
+.dw-nav h2 { margin-bottom: 2px; }
+
+/* The variant guide shares the header's gutter instead of hugging the sidebar edge. */
+.dw-variant-guide { padding: 0 24px; }
+.dw-variant-instructions { padding: 0 0 18px; }
+@media (max-width: 700px) { .dw-variant-guide { padding: 0 16px; } }
+
+/* Sidebar rows share centre lines with the header: brand with the breadcrumb, search with the title. */
+.dw-sidebar { padding-top: 18px; }
+.dw-brand { padding-bottom: 14px; }
+.dw-title-row { min-height: 36px; }
+.dw-workbench .dw-menu { position: relative; top: 2px; }

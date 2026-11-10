@@ -75,6 +75,19 @@ export function Workbench({
     resolveSelection(entries, new URLSearchParams(initialSelection ? { ...initialSelection } : {})),
   );
   const [query, setQuery] = useState('');
+  const groupsKey = `design-workbench:${projectId}:collapsed-groups`;
+  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(groupsKey) ?? '[]');
+      if (Array.isArray(saved)) setClosedGroups(saved.filter((item): item is string => typeof item === 'string'));
+    } catch {}
+  }, [groupsKey]);
+  const toggleGroup = (group: string) => setClosedGroups((current) => {
+    const next = current.includes(group) ? current.filter((item) => item !== group) : [...current, group];
+    try { localStorage.setItem(groupsKey, JSON.stringify(next)); } catch {}
+    return next;
+  });
   const [shortcutModifier, setShortcutModifier] = useState('⌘');
   useEffect(() => { setShortcutModifier(/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'); }, []);
   const [compare, setCompare] = useState(false);
@@ -208,13 +221,18 @@ export function Workbench({
           {!!entries.length && <a className="dw-all-components" href={basePath} onClick={navigateOverview} aria-current={showingOverview ? 'page' : undefined}><LayoutGrid size={15} aria-hidden="true" />All components</a>}
           {groups.map((group) => {
             const items = filtered.filter((item) => item.group === group);
+            // Searching always reveals matches, whatever the saved state.
+            const open = !!query || !closedGroups.includes(group);
             return items.length ? (
               <section key={group}>
                 <h2>
-                  {group}
-                  <span>{items.length}</span>
+                  <button type="button" className="dw-nav-group" aria-expanded={open} disabled={!!query} onClick={() => toggleGroup(group)}>
+                    <span className="dw-nav-group-name">{group}</span>
+                    <ChevronRight size={12} aria-hidden="true" />
+                    <span className="dw-nav-group-count" aria-label={`${items.length} ${items.length === 1 ? 'component' : 'components'}`}>{items.length}</span>
+                  </button>
                 </h2>
-                {items.map((item) => (
+                {open && items.map((item) => (
                   <NavigationPreview
                     key={item.id}
                     title={item.name}
