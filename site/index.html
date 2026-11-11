@@ -1,0 +1,1207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DesignBench</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="The design tool you want, inside Claude, ChatGPT and Cursor. Your component library, every permutation of it, and a canvas to compare them.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48' fill='none' stroke='%231a1c18' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h38M15 12 8 38M33 12l7 26M12 28h25'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Geist:wght@300;400;500;600&display=swap">
+<style>
+/* Layout: a devlog-style 640px reading column that opens into wide 1040px "bench" figures for the two live demos. */
+:root {
+  --bg: #f5f5f3;
+  --fg: #1a1c18;
+  --muted: #76766f;
+  --muted-2: #8e8e87;
+  --line: #e3e3de;
+  --line-strong: #cfcfc8;
+  --surface: #ffffff;
+  --surface-2: #fafaf8;
+  --chip: #efefeb;
+  --canvas: #f2f2ef;
+  --dot: #dbdbd4;
+  --select: #2f62ff;
+  --veil: rgba(0, 0, 0, 0);
+  --win-border: rgba(26, 28, 24, .08);
+  --win-shadow: 0 1px 1px rgba(26, 28, 24, .04), 0 28px 64px -28px rgba(60, 30, 50, .5);
+  --paper: #ffffff;
+  --ink-card: #141512;
+  --ink-edge: #141512;
+  --play-shadow: #1a1c18;
+  --icon-bg1: #ffffff;
+  --icon-bg2: #e7e6e0;
+  --icon-ink: #1a1c18;
+  --dot-claude: #d97757;
+  --dot-chatgpt: #10a37f;
+  --dot-cursor: #1a1c18;
+
+  --font-sans: "Geist", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Fragment Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text: 19px;
+  --col: 640px;
+  --wide: 1040px;
+
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121311; --fg: #ecebe5; --muted: #8d8d86; --muted-2: #6f6f69;
+    --line: #272824; --line-strong: #3a3b36; --surface: #1a1b18; --surface-2: #161714;
+    --chip: #262723; --canvas: #151613; --dot: #2b2c28; --select: #7196ff;
+    --veil: rgba(8, 8, 6, .34); --win-border: rgba(255, 255, 255, .08);
+    --win-shadow: 0 1px 1px rgba(0, 0, 0, .3), 0 28px 64px -24px rgba(0, 0, 0, .75);
+    --paper: #20211d; --ink-card: #0b0c0a; --ink-edge: #3a3b36; --play-shadow: #ecebe5;
+    --icon-bg1: #2e2f2a; --icon-bg2: #191a17; --icon-ink: #ecebe5; --dot-cursor: #ecebe5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121311; --fg: #ecebe5; --muted: #8d8d86; --muted-2: #6f6f69;
+  --line: #272824; --line-strong: #3a3b36; --surface: #1a1b18; --surface-2: #161714;
+  --chip: #262723; --canvas: #151613; --dot: #2b2c28; --select: #7196ff;
+  --veil: rgba(8, 8, 6, .34); --win-border: rgba(255, 255, 255, .08);
+  --win-shadow: 0 1px 1px rgba(0, 0, 0, .3), 0 28px 64px -24px rgba(0, 0, 0, .75);
+  --paper: #20211d; --ink-card: #0b0c0a; --ink-edge: #3a3b36; --play-shadow: #ecebe5;
+  --icon-bg1: #2e2f2a; --icon-bg2: #191a17; --icon-ink: #ecebe5; --dot-cursor: #ecebe5;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--text);
+  font-weight: 300;
+  line-height: 1.42;
+  letter-spacing: -0.012em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+img, svg { max-width: 100%; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--select); outline-offset: 2px; }
+
+.page {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.page[data-agent="claude"] { --agent: var(--dot-claude); }
+.page[data-agent="chatgpt"] { --agent: var(--dot-chatgpt); }
+.page[data-agent="cursor"] { --agent: var(--dot-cursor); }
+
+.mono { font-family: var(--font-mono); font-weight: 400; letter-spacing: 0; }
+
+/* ---------- Top bar ---------- */
+.topbar {
+  max-width: var(--wide);
+  margin: 0 auto;
+  padding-block: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--fg);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.025em;
+}
+.brand svg { width: 22px; height: 22px; }
+.topnav { display: flex; gap: 22px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0; }
+.topnav a { color: var(--fg); text-decoration: none; }
+.topnav a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---------- Story flow ---------- */
+.story { display: flex; flex-direction: column; gap: 64px; padding-bottom: 24px; }
+.col { width: 100%; max-width: var(--col); margin-inline: auto; }
+.wide { width: 100%; max-width: var(--wide); margin-inline: auto; }
+
+.intro { display: flex; flex-direction: column; gap: 22px; padding-top: clamp(28px, 7vw, 72px); }
+h1 {
+  margin: 0;
+  font-size: clamp(32px, 5.2vw, 50px);
+  line-height: 1.04;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+h1 span { display: block; }
+h1 .soft { color: var(--muted-2); }
+.meta {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lede { margin: 0; font-size: clamp(19px, 2vw, 21px); }
+
+.agents { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.agents-label {
+  margin-right: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.agent-pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px 0 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--fg);
+  font: 400 14.5px/1 var(--font-sans);
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: background-color .2s, color .2s, border-color .2s, transform .15s;
+}
+.agent-pill:hover { border-color: var(--fg); }
+.agent-pill:active { transform: scale(.96); }
+.agent-pill[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+.agent-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.agent-pill[aria-pressed="true"] .dot { box-shadow: 0 0 0 1.5px var(--bg); }
+
+/* ---------- Hero stage ---------- */
+.stage {
+  position: relative;
+  margin-block: 0;
+  padding: clamp(16px, 5vw, 56px) clamp(10px, 5vw, 60px) clamp(64px, 8vw, 96px);
+}
+.stage-bg { position: absolute; inset: 0; border-radius: 18px; overflow: hidden; background: #f3c9ad; }
+.stage-bg canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: .42;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.45 0 0 0 0 0.5 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.stage-bg::after { content: ""; position: absolute; inset: 0; background: var(--veil); }
+
+.window {
+  position: relative;
+  z-index: 1;
+  max-width: 940px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--win-border);
+  border-radius: 12px;
+  box-shadow: var(--win-shadow);
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.42;
+  letter-spacing: -0.005em;
+}
+.titlebar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: 38px;
+  padding: 0 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+.lights { display: flex; gap: 7px; }
+.lights i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; }
+.lights i:nth-child(2) { background: #febc2e; }
+.lights i:nth-child(3) { background: #28c840; }
+.titlebar-name { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+.titlebar-name .repo { color: var(--muted); font-weight: 400; }
+.agent-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--agent); transition: background-color .3s; }
+.titlebar-tail { justify-self: end; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+.win-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.15fr); height: 452px; }
+
+.chat { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-right: 1px solid var(--line); background: var(--surface); }
+.chat-log {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 14px 6px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 26px);
+  mask-image: linear-gradient(to bottom, transparent, #000 26px);
+}
+.msg { margin: 0; }
+.msg-user { align-self: flex-end; max-width: 90%; padding: 8px 11px; border-radius: 14px 14px 4px 14px; background: var(--chip); }
+.msg-agent { padding: 0 2px; }
+.note-tag {
+  display: block;
+  margin-bottom: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--select);
+}
+.tool { margin: 0; display: flex; align-items: center; gap: 7px; padding-left: 2px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0; color: var(--muted); white-space: nowrap; }
+.tool .cmd { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tool b { font-weight: 400; color: var(--fg); }
+.tick { flex: none; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: var(--agent); color: var(--surface); transition: background-color .3s; }
+.tick svg { width: 10px; height: 10px; }
+.tool.run .tick { background: transparent; border: 1.5px solid var(--line-strong); border-top-color: var(--agent); animation: spin .7s linear infinite; }
+.tool.run .tick svg { display: none; }
+.composer {
+  margin: 8px 12px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px 8px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  color: var(--muted);
+}
+.send { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--fg); color: var(--bg); }
+.send svg { width: 12px; height: 12px; }
+
+.bench {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.3px);
+  background-size: 14px 14px;
+}
+.bench-bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: 40px;
+  padding: 0 10px 0 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.crumbs { display: flex; align-items: center; gap: 7px; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.crumbs svg { flex: none; width: 15px; height: 15px; color: var(--fg); }
+.crumbs b { color: var(--fg); font-weight: 500; }
+.bench-tools { display: flex; align-items: center; gap: 7px; }
+.seg { display: flex; padding: 2px; border-radius: 7px; background: var(--chip); font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0; color: var(--muted); }
+.seg span { padding: 2px 6px; border-radius: 5px; }
+.seg .on { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .1); }
+.chipbtn { padding: 4px 9px; border: 1px solid var(--line-strong); border-radius: 6px; font-size: 11.5px; white-space: nowrap; }
+.promote { background: var(--select); border-color: var(--select); color: #fff; transition: opacity .3s, transform .35s cubic-bezier(.3, 1.5, .5, 1); }
+.promote.is-off { opacity: 0; transform: scale(.85); }
+.promote.is-pulse { animation: pulse 1.3s ease-out 2; }
+
+.bench-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 128px minmax(0, 1fr); }
+.lib { display: flex; flex-direction: column; gap: 1px; padding: 12px 8px; background: var(--surface); border-right: 1px solid var(--line); font-size: 12px; }
+.lib-head { margin: 0 0 6px 7px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.lib span { padding: 5px 7px; border-radius: 6px; color: var(--muted); }
+.lib .on { background: var(--chip); color: var(--fg); font-weight: 500; }
+
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 16px; align-content: center; }
+.tile { position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.tile-label { display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em; text-transform: uppercase; transition: opacity .3s; }
+.tile-label em { font-style: normal; color: var(--muted); }
+.tile-frame {
+  position: relative;
+  aspect-ratio: 16 / 10.5;
+  max-width: 100%;
+  display: grid;
+  place-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  container-type: inline-size;
+  transition: outline-color .2s, border-color .2s, background-color .2s;
+}
+.tile.is-selected .tile-frame { outline-color: var(--select); }
+.tile.is-ghost .tile-frame { border-style: dashed; border-color: var(--line-strong); background: transparent; }
+.tile.is-ghost .tile-label { opacity: .35; }
+.tile.is-ghost .pc { opacity: 0; transform: scale(.88) translateY(4px); }
+.tile.pop .pc { animation: popin .55s cubic-bezier(.3, 1.5, .5, 1) both; }
+
+/* Mini pricing card, sized in container units so it scales with its tile */
+.pc {
+  width: 54cqi;
+  display: flex;
+  flex-direction: column;
+  gap: 2cqi;
+  padding: 4.2cqi;
+  border-radius: 3cqi;
+  font-size: 4.2cqi;
+  line-height: 1.1;
+  transition: opacity .35s, transform .45s cubic-bezier(.3, 1.4, .5, 1), border-radius .45s;
+}
+.pc-plan { font-weight: 500; }
+.pc-price b { font-size: 9.5cqi; font-weight: 600; letter-spacing: -0.04em; transition: font-size .45s cubic-bezier(.3, 1.4, .5, 1); }
+.pc-bars { display: flex; flex-direction: column; gap: 1.5cqi; margin: .6cqi 0 1.2cqi; }
+.pc-bars i { display: block; height: 1.5cqi; border-radius: 1cqi; background: currentColor; opacity: .16; }
+.pc-bars i:nth-child(2) { width: 78%; }
+.pc-bars i:nth-child(3) { width: 88%; }
+.pc-btn { display: grid; place-items: center; height: 8.5cqi; border-radius: 2cqi; font-size: 3.9cqi; font-weight: 500; }
+
+.pc-current { background: var(--paper); color: var(--fg); border: 1px solid var(--line-strong); box-shadow: 0 1px 2px rgba(0, 0, 0, .05); }
+.pc-current .pc-btn { background: var(--fg); color: var(--bg); }
+.pc-soft { background: #efeaff; color: #2b2172; border-radius: 6cqi; }
+.pc-soft .pc-plan { color: #6150e0; }
+.pc-soft .pc-btn { background: #dcd3ff; color: #3b2fa8; border-radius: 99px; }
+.pc-ink { background: var(--ink-card); color: #f1f0ea; border: 1px solid var(--ink-edge); border-radius: 1cqi; font-family: var(--font-mono); }
+.pc-ink .pc-price b { font-family: var(--font-mono); font-weight: 400; letter-spacing: -0.03em; }
+.pc-ink .pc-bars i { opacity: .3; }
+.pc-ink .pc-btn { border: 1px solid #f1f0ea; border-radius: 0; font-size: 3.4cqi; letter-spacing: .08em; text-transform: uppercase; }
+.pc-playful { background: #ffd84d; color: #1a1c18; border: .9cqi solid #1a1c18; border-radius: 5cqi; box-shadow: 1.8cqi 1.8cqi 0 var(--play-shadow); }
+.pc-playful .pc-plan { align-self: flex-start; padding: .6cqi 2.2cqi; border: .6cqi solid #1a1c18; border-radius: 99px; background: #ff8fc8; transform: rotate(-5deg); }
+.pc-playful .pc-btn { background: #1a1c18; color: #ffd84d; border-radius: 99px; }
+.tile.is-updated .pc-playful { border-radius: 9cqi; animation: wiggle .7s ease both; }
+.tile.is-updated .pc-playful .pc-price b { font-size: 12cqi; }
+
+.pin {
+  position: absolute;
+  z-index: 3;
+  top: 26px;
+  right: -8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 4px 4px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px 12px 12px 3px;
+  box-shadow: 0 8px 20px -8px rgba(0, 0, 0, .3);
+  font-size: 11.5px;
+  white-space: nowrap;
+  transition: opacity .25s, transform .35s cubic-bezier(.3, 1.5, .5, 1);
+}
+.pin .who { flex: none; width: 16px; height: 16px; border-radius: 50%; background: var(--select); box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--select) 60%, #fff); }
+.pin.is-off { opacity: 0; transform: translateY(5px) scale(.9); }
+
+.cursor { position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; transition: transform 1s cubic-bezier(.6, 0, .2, 1); }
+.cursor.no-anim { transition: none; }
+.cursor svg { display: block; width: 18px; height: 18px; transition: transform .12s; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+.cursor.is-click svg { transform: scale(.8); }
+.cursor .tag { position: absolute; left: 14px; top: 17px; padding: 2px 7px; border-radius: 99px; background: var(--select); color: #fff; font-size: 10.5px; font-weight: 500; white-space: nowrap; }
+
+.app-icon {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 88px;
+  height: 88px;
+  border-radius: 22px;
+  background: linear-gradient(160deg, var(--icon-bg1), var(--icon-bg2));
+  box-shadow: inset 0 0 0 1px var(--win-border), 0 16px 32px -12px rgba(40, 20, 40, .5);
+  color: var(--icon-ink);
+  transform: translate(-50%, 44%) rotate(-5deg);
+  transition: transform .55s cubic-bezier(.3, 1.6, .5, 1);
+}
+.app-icon:hover { transform: translate(-50%, 44%) rotate(5deg) scale(1.06); }
+.app-icon svg { width: 46px; height: 46px; }
+.sticker {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  padding: 3px 8px 2px;
+  border: 1.5px solid #1a1c18;
+  border-radius: 99px;
+  background: #ffd84d;
+  color: #1a1c18;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translateX(-50%) rotate(8deg);
+}
+
+/* ---------- Prose ---------- */
+.prose { display: flex; flex-direction: column; gap: 18px; }
+.prose h2 { margin: 0 0 2px; font-size: inherit; font-weight: 400; color: var(--muted); letter-spacing: inherit; }
+.prose p { margin: 0; }
+.prose a { color: inherit; text-decoration-line: underline; text-decoration-color: var(--line-strong); text-decoration-thickness: 1px; text-underline-offset: 4px; }
+.prose a:hover { text-decoration-color: currentColor; }
+code { font-family: var(--font-mono); font-size: .8em; letter-spacing: 0; padding: .12em .38em; border-radius: 5px; background: var(--chip); }
+
+.steps { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 26px; counter-reset: step; }
+.steps li { display: grid; grid-template-columns: 44px minmax(0, 1fr); counter-increment: step; }
+.steps li::before { content: counter(step, decimal-leading-zero); padding-top: 4px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0; color: var(--muted); }
+.steps h3 { margin: 0; font-size: inherit; font-weight: 500; letter-spacing: -0.015em; }
+.steps p { margin: 4px 0 0; }
+.steps .cmd { display: block; margin-top: 10px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0; color: var(--muted); overflow-wrap: anywhere; }
+
+/* ---------- Permutation playground ---------- */
+.pg-fig { margin-block: 0; display: flex; flex-direction: column; gap: 14px; }
+.pg {
+  display: grid;
+  grid-template-columns: 236px minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.3px);
+  background-size: 16px 16px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+}
+.pg-props { display: flex; flex-direction: column; gap: 16px; padding: 20px; background: var(--surface); border-right: 1px solid var(--line); }
+.pg-title { margin: 0; display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field label { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.field output { font-family: var(--font-mono); color: var(--fg); letter-spacing: 0; }
+.input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 13px var(--font-sans);
+}
+select.input { appearance: none; padding-right: 28px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 15px) 15px, calc(100% - 11px) 15px; background-size: 4px 4px; background-repeat: no-repeat; }
+input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
+.check { display: flex; align-items: center; gap: 8px; color: var(--fg); cursor: pointer; font-size: 13px; }
+.check input { width: 15px; height: 15px; margin: 0; accent-color: var(--fg); }
+.shuffle {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 38px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--fg);
+  color: var(--bg);
+  font: 500 13px var(--font-sans);
+  cursor: pointer;
+  transition: transform .15s, opacity .2s;
+}
+.shuffle:hover { opacity: .88; }
+.shuffle:active { transform: scale(.97); }
+.shuffle svg { width: 15px; height: 15px; transition: transform .6s cubic-bezier(.3, 1.4, .5, 1); }
+.shuffle.spin svg { transform: rotate(360deg); }
+
+.pg-stage { min-width: 0; display: flex; align-items: center; padding: 24px; overflow-x: auto; }
+.pg-grid {
+  --r: 10px; --fs: 13.5px; --pad-y: 9px; --pad-x: 15px;
+  --soft-bg: #ebe7ff; --soft-fg: #3b2fa8; --play-bg: #ffd84d;
+  flex: 1;
+  min-width: 640px;
+  display: grid;
+  grid-template-columns: 84px repeat(4, minmax(130px, 1fr));
+  align-items: center;
+  gap: 10px;
+}
+.pg-grid[data-size="small"] { --fs: 12px; --pad-y: 7px; --pad-x: 11px; }
+.pg-grid[data-size="large"] { --fs: 15.5px; --pad-y: 11px; --pad-x: 19px; }
+.pg-col { text-align: center; font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pg-row { display: flex; flex-direction: column; gap: 1px; font-size: 13px; font-weight: 500; }
+.pg-row small { font-family: var(--font-mono); font-size: 10px; font-weight: 400; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.cell { height: 86px; display: grid; place-items: center; padding: 0 8px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.cell.pop { animation: popin .5s cubic-bezier(.3, 1.5, .5, 1) both; animation-delay: var(--delay, 0ms); }
+
+.sb {
+  display: inline-flex;
+  align-items: center;
+  gap: .45em;
+  max-width: 100%;
+  padding: var(--pad-y) var(--pad-x);
+  border: 1.5px solid transparent;
+  border-radius: var(--r);
+  font: 500 var(--fs)/1.1 var(--font-sans);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: border-radius .25s, padding .25s, font-size .25s, background-color .35s, color .35s, transform .2s, box-shadow .2s, opacity .2s;
+}
+.sb-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sb svg { flex: none; width: 1em; height: 1em; }
+.pg-grid[data-icon="off"] .sb-arrow { display: none; }
+.sb-spin { flex: none; width: .9em; height: .9em; border: 1.6px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin .8s linear infinite; }
+.sb[data-s="loading"] .sb-label { opacity: .6; }
+.sb[data-s="disabled"] { opacity: .36; }
+
+.sb[data-d="current"] { background: var(--fg); color: var(--bg); }
+.sb[data-d="current"][data-s="hover"] { transform: translateY(-1px); box-shadow: 0 8px 16px -8px rgba(0, 0, 0, .55); opacity: .9; }
+.sb[data-d="soft"] { background: var(--soft-bg); color: var(--soft-fg); }
+.sb[data-d="soft"][data-s="hover"] { background: color-mix(in srgb, var(--soft-bg) 80%, var(--soft-fg)); }
+.sb[data-d="ink"] { background: transparent; border-color: var(--fg); color: var(--fg); font-family: var(--font-mono); font-weight: 400; font-size: calc(var(--fs) * .86); letter-spacing: .05em; text-transform: uppercase; }
+.sb[data-d="ink"][data-s="hover"] { background: var(--fg); color: var(--bg); }
+.sb[data-d="playful"] { background: var(--play-bg); border-color: #1a1c18; color: #1a1c18; font-weight: 600; box-shadow: 3px 3px 0 var(--play-shadow); }
+.sb[data-d="playful"][data-s="hover"] { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--play-shadow); }
+.sb[data-d="playful"][data-s="disabled"] { box-shadow: none; }
+
+.caption { margin: 0; font-family: var(--font-mono); font-size: 12.5px; letter-spacing: 0; color: var(--muted); }
+
+/* ---------- Call to action ---------- */
+.prompt { display: flex; flex-direction: column; gap: 10px; }
+.where { margin: 0; font-size: 16px; color: var(--muted); }
+.prompt-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  padding: 16px 16px 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+}
+.prompt-box p { margin: 0; font-size: 16.5px; font-weight: 400; line-height: 1.5; letter-spacing: -0.008em; }
+.copy {
+  appearance: none;
+  min-width: 76px;
+  padding: 7px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 12px var(--font-mono);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color .2s, color .2s, border-color .2s;
+}
+.copy:hover { border-color: var(--fg); }
+.copy.is-done { background: var(--fg); border-color: var(--fg); color: var(--bg); }
+.terminal {
+  margin: 0;
+  padding: 14px 16px;
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--fg);
+  font: 400 13px/1.75 var(--font-mono);
+  letter-spacing: 0;
+}
+
+/* ---------- Footer ---------- */
+.foot {
+  max-width: var(--wide);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  padding-block: 64px 40px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+.foot .rule { flex: 1; min-width: 40px; height: 1px; background: var(--line-strong); }
+.foot nav { display: flex; flex-wrap: wrap; gap: 18px; }
+.foot a { color: var(--fg); text-decoration: none; }
+.foot a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+/* ---------- Motion ---------- */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes popin { from { opacity: 0; transform: scale(.86); } to { opacity: 1; transform: none; } }
+@keyframes wiggle { 0% { transform: none; } 30% { transform: rotate(-3deg) scale(1.05); } 60% { transform: rotate(2deg); } 100% { transform: none; } }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--select) 55%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
+.enter { animation: rise .35s ease-out both; }
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 760px) {
+  .story { gap: 52px; }
+  .win-body { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .chat { border-right: 0; border-bottom: 1px solid var(--line); }
+  .chat-log { flex: none; height: 178px; }
+  .composer { display: none; }
+  .bench-main { grid-template-columns: minmax(0, 1fr); }
+  .lib, .seg, .titlebar-tail, .crumb-root { display: none; }
+  .tiles { gap: 12px 10px; padding: 14px 12px 16px; }
+  .tile-label em { display: none; }
+  .pin { top: -5px; right: -6px; max-width: 96px; white-space: normal; line-height: 1.2; font-size: 10.5px; padding: 4px 7px 4px 4px; align-items: flex-start; }
+  .pin .who { width: 12px; height: 12px; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--select) 60%, #fff); }
+  .app-icon { width: 72px; height: 72px; border-radius: 18px; }
+  .app-icon svg { width: 38px; height: 38px; }
+  .pg { grid-template-columns: minmax(0, 1fr); }
+  .pg-props { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; border-right: 0; border-bottom: 1px solid var(--line); padding: 16px; }
+  .pg-title, .shuffle { grid-column: 1 / -1; }
+  .pg-stage { padding: 16px; }
+  .prompt-box { grid-template-columns: minmax(0, 1fr); }
+  .copy { justify-self: start; }
+  .steps li { grid-template-columns: 36px minmax(0, 1fr); }
+}
+@media (max-width: 420px) {
+  .titlebar-name .repo, .titlebar-name .sep { display: none; }
+  .bench-tools .compare { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+</style>
+</head>
+<body>
+<div class="page" id="page" data-agent="claude">
+
+  <header class="topbar">
+    <a class="brand" href="#top" id="top">
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h38M15 12 8 38M33 12l7 26M12 28h25"/></svg>
+      DesignBench
+    </a>
+    <nav class="topnav" aria-label="Site">
+      <a href="#start">Get started</a>
+      <a href="https://github.com/nicolaerusan/design-workbench">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="story">
+
+    <header class="col intro">
+      <h1><span>The design tool you want,</span> <span class="soft">inside Claude, ChatGPT and Cursor.</span></h1>
+      <p class="meta">10 November 2026 · Early preview</p>
+      <p class="lede">Apps are being built from chat now. DesignBench gives the agent you already use a design surface with your component library, every permutation of it, and a canvas to compare them side by side.</p>
+      <div class="agents" role="group" aria-label="Choose your agent">
+        <span class="agents-label">Works with</span>
+        <button class="agent-pill" type="button" data-agent-pick="claude" aria-pressed="true" style="--c: var(--dot-claude)"><span class="dot"></span>Claude</button>
+        <button class="agent-pill" type="button" data-agent-pick="chatgpt" aria-pressed="false" style="--c: var(--dot-chatgpt)"><span class="dot"></span>ChatGPT</button>
+        <button class="agent-pill" type="button" data-agent-pick="cursor" aria-pressed="false" style="--c: var(--dot-cursor)"><span class="dot"></span>Cursor</button>
+      </div>
+    </header>
+
+    <figure class="wide stage" aria-label="An agent chat creating pricing card variants on the DesignBench canvas">
+      <div class="stage-bg" aria-hidden="true">
+        <canvas id="gradient"></canvas>
+        <div class="grain"></div>
+      </div>
+
+      <div class="window" id="window">
+        <div class="titlebar">
+          <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="titlebar-name"><span class="agent-dot"></span><span data-agent-name>Claude</span><span class="sep repo">·</span><span class="repo">storefront</span></span>
+          <span class="titlebar-tail">localhost:7070</span>
+        </div>
+
+        <div class="win-body">
+          <section class="chat" aria-label="Agent conversation">
+            <div class="chat-log" id="chatLog">
+              <p class="msg msg-user" data-step><span data-text="Give me three more takes on the pricing card. Make one playful.">Give me three more takes on the pricing card. Make one playful.</span></p>
+              <p class="tool" data-step data-tile="soft"><span class="tick"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2 5 8.2 9 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="cmd">variant create pricing-card <b>soft</b></span></p>
+              <p class="tool" data-step data-tile="ink"><span class="tick"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2 5 8.2 9 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="cmd">variant create pricing-card <b>ink</b></span></p>
+              <p class="tool" data-step data-tile="playful"><span class="tick"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2 5 8.2 9 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="cmd">variant create pricing-card <b>playful</b></span></p>
+              <p class="msg msg-agent" data-step>Three new directions are on the bench next to the current card, all at 1280px with the same props.</p>
+              <p class="msg msg-user" data-step><span class="note-tag">Comment on Playful</span>Bigger price, rounder</p>
+              <p class="tool" data-step><span class="tick"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 6.2 5 8.2 9 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="cmd">edit ideas/<b>playful</b>/component.tsx</span></p>
+              <p class="msg msg-agent" data-step>Updated Playful. Want me to promote it?</p>
+            </div>
+            <div class="composer" aria-hidden="true">
+              <span data-agent-placeholder>Reply to Claude…</span>
+              <span class="send"><svg viewBox="0 0 12 12"><path d="M6 9.6V2.6M3 5.4 6 2.4l3 3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </div>
+          </section>
+
+          <section class="bench" aria-label="DesignBench canvas">
+            <div class="bench-bar">
+              <span class="crumbs">
+                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h38M15 12 8 38M33 12l7 26M12 28h25"/></svg>
+                <span class="crumb-root">Components</span><span class="crumb-root" aria-hidden="true">/</span><b>Pricing card</b>
+              </span>
+              <span class="bench-tools">
+                <span class="seg" aria-hidden="true"><span>375</span><span>768</span><span class="on">1280</span></span>
+                <span class="chipbtn compare">Compare 4</span>
+                <span class="chipbtn promote" id="promote">Promote</span>
+              </span>
+            </div>
+            <div class="bench-main">
+              <div class="lib" aria-label="Component library">
+                <p class="lib-head">Library</p>
+                <span>Button</span>
+                <span>Badge</span>
+                <span class="on">Pricing card</span>
+                <span>Empty state</span>
+                <span>Nav bar</span>
+                <span>Toast</span>
+                <span>Settings row</span>
+              </div>
+              <div class="tiles">
+                <div class="tile" data-tile="current">
+                  <div class="tile-label"><span>Current</span><em>source</em></div>
+                  <div class="tile-frame">
+                    <div class="pc pc-current"><span class="pc-plan">Pro</span><span class="pc-price"><b>$24</b> /mo</span><span class="pc-bars"><i></i><i></i><i></i></span><span class="pc-btn">Start trial</span></div>
+                  </div>
+                </div>
+                <div class="tile" data-tile="soft">
+                  <div class="tile-label"><span>Soft</span><em>variant</em></div>
+                  <div class="tile-frame">
+                    <div class="pc pc-soft"><span class="pc-plan">Pro</span><span class="pc-price"><b>$24</b> /mo</span><span class="pc-bars"><i></i><i></i><i></i></span><span class="pc-btn">Start trial</span></div>
+                  </div>
+                </div>
+                <div class="tile" data-tile="ink">
+                  <div class="tile-label"><span>Ink</span><em>variant</em></div>
+                  <div class="tile-frame">
+                    <div class="pc pc-ink"><span class="pc-plan">PRO</span><span class="pc-price"><b>$24</b> /mo</span><span class="pc-bars"><i></i><i></i><i></i></span><span class="pc-btn">Start trial</span></div>
+                  </div>
+                </div>
+                <div class="tile is-selected is-updated" data-tile="playful">
+                  <div class="tile-label"><span>Playful</span><em>variant</em></div>
+                  <div class="tile-frame">
+                    <div class="pc pc-playful"><span class="pc-plan">Pro</span><span class="pc-price"><b>$24</b> /mo</span><span class="pc-bars"><i></i><i></i><i></i></span><span class="pc-btn">Start trial</span></div>
+                  </div>
+                  <div class="pin" id="pin"><span class="who"></span><span id="pinText" data-text="Bigger price, rounder">Bigger price, rounder</span></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div class="cursor no-anim" id="cursor" aria-hidden="true">
+          <svg viewBox="0 0 18 18"><path d="M3 2.2 15 8.4l-5.6 1.5-2.6 5.5z" fill="#1a1c18" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          <span class="tag">You</span>
+        </div>
+      </div>
+
+      <div class="app-icon" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h38M15 12 8 38M33 12l7 26M12 28h25"/></svg>
+        <span class="sticker">Preview</span>
+      </div>
+    </figure>
+
+    <section class="col prose" aria-labelledby="why">
+      <h2 id="why">Why now</h2>
+      <p>A lot of software now starts as a conversation. You describe a screen to Claude or ChatGPT, it writes the code, and you look at what came out.</p>
+      <p>Design tools haven’t caught up. They live in a separate app with a separate copy of your components, and the bridge to your agent is screenshots and copy-paste. Ask for three directions and two of them are gone by the next message.</p>
+      <p>DesignBench keeps every direction. It renders your real React components, saves each variant as a file next to the original, and lays them out on one canvas. What you compare is what ships.</p>
+    </section>
+
+    <section class="col prose" aria-labelledby="perms">
+      <h2 id="perms">Every permutation, on one bench</h2>
+      <p>Designs are the different takes on a component. States are the situations it has to handle, like hover, loading and disabled. Properties are the knobs you’d find in an inspector. DesignBench crosses all three, so you see every combination and spot the ones nobody designed.</p>
+    </section>
+
+    <figure class="wide pg-fig">
+      <div class="pg">
+        <form class="pg-props" id="pgProps" aria-label="Button properties">
+          <p class="pg-title"><span>Properties</span><span>Button</span></p>
+          <div class="field">
+            <label for="pgLabel">Label</label>
+            <input class="input" id="pgLabel" type="text" value="Start trial" maxlength="20" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="pgRadius">Radius <output id="pgRadiusOut" for="pgRadius">10</output></label>
+            <input id="pgRadius" type="range" min="0" max="24" value="10">
+          </div>
+          <div class="field">
+            <label for="pgSize">Size</label>
+            <select class="input" id="pgSize">
+              <option value="small">Small</option>
+              <option value="medium" selected>Medium</option>
+              <option value="large">Large</option>
+            </select>
+          </div>
+          <label class="check" for="pgIcon"><input id="pgIcon" type="checkbox" checked> Arrow icon</label>
+          <button class="shuffle" id="pgShuffle" type="button">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.2 8a5.2 5.2 0 1 1-1.6-3.8M13.2 2.6v2.9h-2.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Shuffle the variants
+          </button>
+        </form>
+        <div class="pg-stage">
+          <div class="pg-grid" id="pgGrid" data-size="medium" data-icon="on" role="img" aria-label="A grid of one button in four designs (Current, Soft, Ink, Playful) across four states (Default, Hover, Loading, Disabled)"></div>
+        </div>
+      </div>
+      <figcaption class="caption">Try it. Each cell is the same button, and every property applies to all sixteen.</figcaption>
+    </figure>
+
+    <section class="col prose" aria-labelledby="how">
+      <h2 id="how">How it works</h2>
+      <ol class="steps">
+        <li><div>
+          <h3>Ask your agent to set it up.</h3>
+          <p>It installs DesignBench, finds your components and writes previews with realistic props.</p>
+          <span class="cmd">npx designbench init</span>
+        </div></li>
+        <li><div>
+          <h3>Ask for directions.</h3>
+          <p>“Five takes on the empty state, one of them weird.” Each variant is a copy of the source file under <code>.design-workbench/ideas</code>, so your app stays untouched.</p>
+        </div></li>
+        <li><div>
+          <h3>Compare on the canvas.</h3>
+          <p>Every direction renders with the same props, state and viewport, at 375, 768 or 1280 px. Point at what you like, leave a note, and go another round.</p>
+        </div></li>
+        <li><div>
+          <h3>Promote the one you pick.</h3>
+          <p>One command shows the diff against your source. Add <code>--apply</code> to write it, with a backup kept beside the variant.</p>
+          <span class="cmd">npx designbench variant promote empty-state weird --apply</span>
+        </div></li>
+      </ol>
+    </section>
+
+    <section class="col prose" aria-labelledby="available">
+      <h2 id="available">What is available</h2>
+      <p>DesignBench 0.3 is an early preview for React projects. It runs as a local workbench next to your app. Claude Code, Codex and Cursor drive it through a small CLI and an <code>AGENT.md</code> guide it writes into your repo.</p>
+      <p>You get a searchable component library, saved variants, side-by-side comparison, editable properties and states, links that reopen an exact selection, and guarded promotion back into your source.</p>
+    </section>
+
+    <section class="col prose" aria-labelledby="next">
+      <h2 id="next">What is next</h2>
+      <p>The bench inside the chat. We’re bringing the canvas into Claude and ChatGPT conversations as an app, so you can point at a variant and ask for changes without leaving the thread.</p>
+      <p>After that comes <a href="https://pattern.garden">Pattern Garden</a>, a library of real components from across the web that you can start new variants from.</p>
+    </section>
+
+    <section class="col prose" aria-labelledby="cost">
+      <h2 id="cost">What it costs</h2>
+      <p>DesignBench is free and MIT licensed. There’s no account and no model API key. Your agent does the coding on the plan you already have.</p>
+    </section>
+
+    <section class="col prose" id="start" aria-labelledby="start-h">
+      <h2 id="start-h">Start in your agent</h2>
+      <div class="agents" role="group" aria-label="Choose your agent">
+        <button class="agent-pill" type="button" data-agent-pick="claude" aria-pressed="true" style="--c: var(--dot-claude)"><span class="dot"></span>Claude</button>
+        <button class="agent-pill" type="button" data-agent-pick="chatgpt" aria-pressed="false" style="--c: var(--dot-chatgpt)"><span class="dot"></span>ChatGPT</button>
+        <button class="agent-pill" type="button" data-agent-pick="cursor" aria-pressed="false" style="--c: var(--dot-cursor)"><span class="dot"></span>Cursor</button>
+      </div>
+      <div class="prompt">
+        <p class="where" data-agent-where>Open Claude Code in your project and paste this:</p>
+        <div class="prompt-box">
+          <p id="promptText">Set up DesignBench in this project. It lives at github.com/nicolaerusan/design-workbench. Install the v0.3.0 release as its README describes, run npx designbench init, then read .design-workbench/AGENT.md and add previews for our main components. Start it with npx designbench dev and send me the link.</p>
+          <button class="copy" id="copyPrompt" type="button">Copy</button>
+        </div>
+      </div>
+      <p class="where">Or run it yourself from a terminal:</p>
+<pre class="terminal">npm install --save-dev https://github.com/nicolaerusan/design-workbench/releases/download/v0.3.0/designbench-0.3.0.tgz
+npx designbench init
+npx designbench add --all
+npx designbench dev</pre>
+    </section>
+
+  </main>
+
+  <footer class="foot">
+    <span>DesignBench</span>
+    <span class="rule" aria-hidden="true"></span>
+    <nav aria-label="Footer">
+      <a href="https://github.com/nicolaerusan/design-workbench">GitHub</a>
+      <a href="https://github.com/nicolaerusan/design-workbench/blob/main/LICENSE">MIT license</a>
+      <a href="https://pattern.garden">Pattern Garden</a>
+    </nav>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  /* ---------- Grainy gradient behind the hero ---------- */
+  const PALETTES = {
+    claude:  ['#f3c9ad', '#ff9572', '#f8d98a', '#c6b2ff', '#ffc9b0'],
+    chatgpt: ['#c6eedb', '#74d9b1', '#8acdff', '#e4f39a', '#b4efe4'],
+    cursor:  ['#d2d9ff', '#8fa4ff', '#d0a6ff', '#8bdcff', '#ffc4e1'],
+  };
+  const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  const canvas = document.getElementById('gradient');
+  const ctx = canvas.getContext('2d');
+  let cur = PALETTES.claude.map(hex);
+  let target = cur.map((c) => c.slice());
+  const blobs = [
+    { x: .16, y: .2,  ax: .16, ay: .14, sx: .00023, sy: .00031, r: .6,  p: 0 },
+    { x: .84, y: .26, ax: .13, ay: .18, sx: .00027, sy: .00019, r: .56, p: 2 },
+    { x: .34, y: .9,  ax: .2,  ay: .1,  sx: .00017, sy: .00029, r: .64, p: 4 },
+    { x: .8,  y: .86, ax: .12, ay: .14, sx: .00033, sy: .00021, r: .5,  p: 1 },
+  ];
+  let raf = 0;
+  let onScreen = true;
+
+  function sizeCanvas() {
+    const r = canvas.getBoundingClientRect();
+    canvas.width = Math.max(2, Math.round(r.width / 4));
+    canvas.height = Math.max(2, Math.round(r.height / 4));
+  }
+  function draw(t) {
+    const w = canvas.width, h = canvas.height, m = Math.max(w, h);
+    ctx.fillStyle = `rgb(${cur[0].map(Math.round).join(',')})`;
+    ctx.fillRect(0, 0, w, h);
+    blobs.forEach((b, i) => {
+      const c = cur[i + 1].map(Math.round).join(',');
+      const x = w * (b.x + Math.sin(t * b.sx + b.p) * b.ax);
+      const y = h * (b.y + Math.cos(t * b.sy + b.p) * b.ay);
+      const g = ctx.createRadialGradient(x, y, 0, x, y, m * b.r);
+      g.addColorStop(0, `rgba(${c},1)`);
+      g.addColorStop(.5, `rgba(${c},.6)`);
+      g.addColorStop(1, `rgba(${c},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    });
+  }
+  function frame(t) {
+    raf = 0;
+    let moving = false;
+    cur = cur.map((c, i) => c.map((v, j) => {
+      const d = target[i][j] - v;
+      if (Math.abs(d) > .4) moving = true;
+      return v + d * .06;
+    }));
+    draw(t);
+    if ((!reduce.matches && onScreen) || moving) raf = requestAnimationFrame(frame);
+  }
+  function kick() { if (!raf) raf = requestAnimationFrame(frame); }
+  function setPalette(key) {
+    target = PALETTES[key].map(hex);
+    if (reduce.matches) { cur = target.map((c) => c.slice()); draw(0); } else kick();
+  }
+  sizeCanvas();
+  draw(0);
+  kick();
+  window.addEventListener('resize', () => { sizeCanvas(); draw(performance.now()); });
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; if (onScreen) kick(); }).observe(canvas);
+  }
+
+  /* ---------- Agent picker ---------- */
+  const AGENTS = {
+    claude:  { name: 'Claude',  placeholder: 'Reply to Claude…', where: 'Open Claude Code in your project and paste this:' },
+    chatgpt: { name: 'ChatGPT', placeholder: 'Ask ChatGPT…',     where: 'Open Codex in ChatGPT on your repo and paste this:' },
+    cursor:  { name: 'Cursor',  placeholder: 'Ask Cursor…',      where: 'Open the agent in Cursor and paste this:' },
+  };
+  const page = document.getElementById('page');
+  const pills = [...document.querySelectorAll('[data-agent-pick]')];
+  function setAgent(key, remember) {
+    const a = AGENTS[key];
+    if (!a) return;
+    page.dataset.agent = key;
+    pills.forEach((p) => p.setAttribute('aria-pressed', String(p.dataset.agentPick === key)));
+    document.querySelectorAll('[data-agent-name]').forEach((el) => { el.textContent = a.name; });
+    document.querySelectorAll('[data-agent-placeholder]').forEach((el) => { el.textContent = a.placeholder; });
+    document.querySelectorAll('[data-agent-where]').forEach((el) => { el.textContent = a.where; });
+    setPalette(key);
+    if (remember) { try { localStorage.setItem('designbench-agent', key); } catch (e) {} }
+  }
+  pills.forEach((p) => p.addEventListener('click', () => setAgent(p.dataset.agentPick, true)));
+  let saved = null;
+  try { saved = localStorage.getItem('designbench-agent'); } catch (e) {}
+  if (saved && AGENTS[saved] && saved !== 'claude') setAgent(saved, false);
+
+  /* ---------- Hero sequence: prompt, variants appear, comment, update ---------- */
+  const win = document.getElementById('window');
+  const log = document.getElementById('chatLog');
+  const steps = [...log.querySelectorAll('[data-step]')];
+  const tiles = Object.fromEntries([...document.querySelectorAll('.tile')].map((t) => [t.dataset.tile, t]));
+  const pin = document.getElementById('pin');
+  const pinText = document.getElementById('pinText');
+  const promote = document.getElementById('promote');
+  const cursor = document.getElementById('cursor');
+  const playFrame = tiles.playful.querySelector('.tile-frame');
+  let run = 0;
+
+  function cursorTo(el, fx, fy) {
+    const w = win.getBoundingClientRect(), r = el.getBoundingClientRect();
+    cursor.style.transform = `translate(${Math.round(r.left - w.left + r.width * fx)}px, ${Math.round(r.top - w.top + r.height * fy)}px)`;
+  }
+  const chatPane = win.querySelector('.chat');
+  const cursorX = () => (win.clientWidth < 520 ? .5 : .84);
+  function parkCursor() {
+    const w = win.getBoundingClientRect(), c = chatPane.getBoundingClientRect();
+    cursor.style.transform = `translate(${Math.round(c.left - w.left + c.width * .6)}px, ${Math.round(c.bottom - w.top - 30)}px)`;
+  }
+  function placeCursorNow(fn) {
+    cursor.classList.add('no-anim');
+    fn();
+    void cursor.offsetWidth;
+    cursor.classList.remove('no-anim');
+  }
+  function show(el) {
+    el.hidden = false;
+    el.classList.remove('enter');
+    void el.offsetWidth;
+    el.classList.add('enter');
+  }
+  function pop(tile) {
+    tile.classList.remove('is-ghost', 'pop');
+    void tile.offsetWidth;
+    tile.classList.add('pop');
+  }
+  async function type(el, alive, speed) {
+    const text = el.dataset.text;
+    for (let i = 1; i <= text.length; i++) {
+      if (!alive()) return;
+      el.textContent = text.slice(0, i);
+      await sleep(speed);
+    }
+  }
+  function finalState() {
+    steps.forEach((s) => { s.hidden = false; s.classList.remove('run'); });
+    log.querySelectorAll('[data-text]').forEach((el) => { el.textContent = el.dataset.text; });
+    pinText.textContent = pinText.dataset.text;
+    Object.values(tiles).forEach((t) => t.classList.remove('is-ghost'));
+    tiles.playful.classList.add('is-selected', 'is-updated');
+    pin.classList.remove('is-off');
+    promote.classList.remove('is-off');
+    placeCursorNow(() => cursorTo(playFrame, cursorX(), .74));
+  }
+  function reset() {
+    steps.forEach((s) => { s.hidden = true; s.classList.remove('enter', 'run'); });
+    ['soft', 'ink', 'playful'].forEach((k) => tiles[k].classList.add('is-ghost'));
+    tiles.playful.classList.remove('is-selected', 'is-updated');
+    pin.classList.add('is-off');
+    promote.classList.add('is-off');
+    promote.classList.remove('is-pulse');
+    parkCursor();
+  }
+  async function play() {
+    const me = ++run;
+    const alive = () => me === run;
+    await sleep(4200);
+    while (alive()) {
+      reset();
+      await sleep(900); if (!alive()) return;
+
+      const [ask, t1, t2, t3, done, note, edit, offer] = steps;
+      const askText = ask.querySelector('[data-text]');
+      askText.textContent = '';
+      show(ask);
+      await type(askText, alive, 24); if (!alive()) return;
+      await sleep(450);
+
+      for (const t of [t1, t2, t3]) {
+        t.classList.add('run');
+        show(t);
+        await sleep(520); if (!alive()) return;
+        t.classList.remove('run');
+        pop(tiles[t.dataset.tile]);
+        await sleep(220);
+      }
+      show(done);
+      await sleep(1200); if (!alive()) return;
+
+      cursorTo(playFrame, cursorX(), .74);
+      await sleep(1050); if (!alive()) return;
+      cursor.classList.add('is-click');
+      tiles.playful.classList.add('is-selected');
+      await sleep(150);
+      cursor.classList.remove('is-click');
+      pinText.textContent = '';
+      pin.classList.remove('is-off');
+      await type(pinText, alive, 36); if (!alive()) return;
+      await sleep(450);
+      show(note);
+      await sleep(650); if (!alive()) return;
+
+      edit.classList.add('run');
+      show(edit);
+      await sleep(850); if (!alive()) return;
+      edit.classList.remove('run');
+      tiles.playful.classList.add('is-updated');
+      await sleep(500);
+      show(offer);
+      promote.classList.remove('is-off');
+      promote.classList.add('is-pulse');
+      await sleep(5600);
+    }
+  }
+  function start() {
+    run++;
+    finalState();
+    if (!reduce.matches) play();
+  }
+  window.addEventListener('resize', () => {
+    if (tiles.playful.classList.contains('is-selected')) placeCursorNow(() => cursorTo(playFrame, cursorX(), .74));
+    else placeCursorNow(parkCursor);
+  });
+  reduce.addEventListener?.('change', () => { start(); kick(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+
+  /* ---------- Permutation playground ---------- */
+  const grid = document.getElementById('pgGrid');
+  const designs = [['current', 'Current', 'source'], ['soft', 'Soft', 'variant'], ['ink', 'Ink', 'variant'], ['playful', 'Playful', 'variant']];
+  const states = ['Default', 'Hover', 'Loading', 'Disabled'];
+  const arrow = '<svg class="sb-arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9.5M9 4.5 12.5 8 9 11.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  let html = '<span></span>' + states.map((s) => `<span class="pg-col">${s}</span>`).join('');
+  designs.forEach(([id, name, kind]) => {
+    html += `<span class="pg-row">${name}<small>${kind}</small></span>`;
+    states.forEach((s) => {
+      const st = s.toLowerCase();
+      const lead = st === 'loading' ? '<span class="sb-spin"></span>' : '';
+      const tail = st === 'loading' ? '' : arrow;
+      html += `<span class="cell" data-row="${id}"><span class="sb" data-d="${id}" data-s="${st}">${lead}<span class="sb-label">Start trial</span>${tail}</span></span>`;
+    });
+  });
+  grid.innerHTML = html;
+
+  const labelInput = document.getElementById('pgLabel');
+  const radiusInput = document.getElementById('pgRadius');
+  const radiusOut = document.getElementById('pgRadiusOut');
+  const sizeInput = document.getElementById('pgSize');
+  const iconInput = document.getElementById('pgIcon');
+  const shuffleBtn = document.getElementById('pgShuffle');
+  const labels = [...grid.querySelectorAll('.sb-label')];
+
+  labelInput.addEventListener('input', () => {
+    const v = labelInput.value.trim() || 'Button';
+    labels.forEach((l) => { l.textContent = v; });
+  });
+  radiusInput.addEventListener('input', () => {
+    grid.style.setProperty('--r', radiusInput.value + 'px');
+    radiusOut.textContent = radiusInput.value;
+  });
+  sizeInput.addEventListener('change', () => { grid.dataset.size = sizeInput.value; });
+  iconInput.addEventListener('change', () => { grid.dataset.icon = iconInput.checked ? 'on' : 'off'; });
+  document.getElementById('pgProps').addEventListener('submit', (e) => e.preventDefault());
+
+  const SOFT = [['#ebe7ff', '#3b2fa8'], ['#d9f4e6', '#17603f'], ['#ffe4d6', '#9a3a12'], ['#dcefff', '#1d4f86'], ['#ffe0ee', '#9c1f58'], ['#eef3cc', '#4c5709']];
+  const PLAY = ['#ffd84d', '#ff9ccf', '#b7f171', '#ffb26b', '#8fe3ff', '#c9adff'];
+  let si = 0, pi = 0;
+  const nextIndex = (i, n) => (i + 1 + Math.floor(Math.random() * (n - 1))) % n;
+  shuffleBtn.addEventListener('click', () => {
+    si = nextIndex(si, SOFT.length);
+    pi = nextIndex(pi, PLAY.length);
+    grid.style.setProperty('--soft-bg', SOFT[si][0]);
+    grid.style.setProperty('--soft-fg', SOFT[si][1]);
+    grid.style.setProperty('--play-bg', PLAY[pi]);
+    grid.querySelectorAll('.cell[data-row="soft"], .cell[data-row="playful"]').forEach((c, i) => {
+      c.classList.remove('pop');
+      void c.offsetWidth;
+      c.style.setProperty('--delay', (i * 45) + 'ms');
+      c.classList.add('pop');
+    });
+    shuffleBtn.classList.remove('spin');
+    void shuffleBtn.offsetWidth;
+    shuffleBtn.classList.add('spin');
+  });
+
+  /* ---------- Copy prompt ---------- */
+  const copyBtn = document.getElementById('copyPrompt');
+  const promptText = document.getElementById('promptText');
+  copyBtn.addEventListener('click', () => {
+    const text = promptText.textContent.trim();
+    const reset = (ms) => setTimeout(() => { copyBtn.textContent = 'Copy'; copyBtn.classList.remove('is-done'); }, ms);
+    const done = () => { copyBtn.textContent = 'Copied'; copyBtn.classList.add('is-done'); reset(1600); };
+    const fallback = () => {
+      const range = document.createRange();
+      range.selectNodeContents(promptText);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      copyBtn.textContent = 'Selected';
+      reset(2200);
+    };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+  });
+})();
+</script>
+</body>
+</html>
