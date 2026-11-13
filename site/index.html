@@ -674,16 +674,16 @@ input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
 .modes button[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .1), 0 0 0 1px var(--line); }
 .soon { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--select); }
 
-.install-stage { position: relative; padding: clamp(18px, 6vw, 64px) clamp(10px, 5vw, 48px); }
+.install-stage { position: relative; padding: clamp(16px, 4.5vw, 44px) clamp(10px, 5vw, 48px); }
 .install-card {
   position: relative;
   z-index: 1;
-  max-width: 640px;
+  max-width: 680px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 22px 24px 24px;
+  padding: 20px 20px 18px;
   background: var(--surface);
   border: 1px solid var(--win-border);
   border-radius: 16px;
@@ -742,40 +742,27 @@ input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
 .copy-icon.is-done .ic-done { display: block; }
 .copy-icon.is-done { color: var(--fg); }
 
-.prompt-pre {
-  margin: 0;
-  padding: 14px 16px;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  color: var(--fg);
-  font: 400 12.5px/1.75 var(--font-mono);
-  letter-spacing: 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.prompt-pre .n { color: var(--muted); }
-.prompt-pre .t { color: var(--select); }
-.card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
-.btn-primary {
+/* The prompt card reuses the hero's one-line strip, framed, with a placeholder for one-click install */
+.quick-framed { border: 1px solid var(--line); border-radius: 10px; }
+.card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.add-soon {
   appearance: none;
+  flex: none;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  min-width: 132px;
-  height: 40px;
-  padding: 0 18px;
-  border: 0;
+  gap: 7px;
+  height: 32px;
+  padding: 0 12px 0 10px;
+  border: 1px dashed var(--line-strong);
   border-radius: 999px;
-  background: var(--fg);
-  color: var(--bg);
-  font: 500 14px var(--font-sans);
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  transition: opacity .2s, transform .15s;
+  background: transparent;
+  color: var(--muted);
+  font: 400 13px/1 var(--font-sans);
+  letter-spacing: -0.005em;
+  cursor: default;
 }
-.btn-primary:hover { opacity: .88; }
-.btn-primary:active { transform: scale(.97); }
+.add-soon .logo { width: 14px; height: 14px; }
+.add-soon .soon { margin-left: 2px; }
 
 /* ---------- Footer ---------- */
 .foot {
@@ -829,8 +816,9 @@ input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
 }
 @media (max-width: 600px) {
   /* Let the line wrap on phones so the whole URL stays readable */
-  .quick-line { height: auto; min-height: 40px; align-items: center; }
-  .quick-line code { padding: 8px 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; -webkit-mask-image: none; mask-image: none; }
+  .quick-line { flex-wrap: wrap; height: auto; padding: 4px 4px 4px 12px; }
+  .quick-line code { flex-basis: 100%; padding: 6px 8px 2px 0; white-space: normal; overflow-wrap: anywhere; line-height: 1.5; -webkit-mask-image: none; mask-image: none; }
+  .quick-copy { margin-left: auto; }
 }
 @media (max-width: 420px) {
   .titlebar-name .repo, .titlebar-name .sep { display: none; }
@@ -1072,7 +1060,7 @@ input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
 
     <section class="col prose" id="start" aria-labelledby="start-h">
       <h2 id="start-h">Start in your agent</h2>
-      <p>Pick your agent and how you’d like to install. The quickest start is a prompt. Paste it, and your agent installs DesignBench, builds previews for your components, and sends you a link.</p>
+      <p>Paste one line into your agent. It installs DesignBench, fits it to your project’s components and styles, checks every preview, and sends you a link.</p>
     </section>
 
     <figure class="wide install" aria-label="Install DesignBench">
@@ -1095,18 +1083,17 @@ input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
           <div class="grain"></div>
         </div>
 
-        <div class="install-card" role="tabpanel" id="panel-prompt" aria-labelledby="mode-prompt" data-copy-scope>
-          <h3><svg class="logo agent-logo" aria-hidden="true"><use href="#logo-claude" data-agent-logo/></svg><span>Set up DesignBench with <span data-agent-tool>Claude Code</span></span></h3>
-          <p class="card-desc" data-agent-where>Open your project in Claude Code, in a terminal, your editor or the Code tab of the Claude desktop app, and paste this.</p>
-<pre class="prompt-pre" data-copy-src>Set up DesignBench in this project so we can design its components together.
-<span class="n">1.</span> Install the preview: <span class="t">`npm install --save-dev https://github.com/nicolaerusan/design-workbench/releases/download/v0.3.0/designbench-0.3.0.tgz`</span>
-<span class="n">2.</span> Run <span class="t">`npx designbench init`</span>, then read .design-workbench/AGENT.md.
-<span class="n">3.</span> Run <span class="t">`npx designbench scan --write`</span> and add finished previews for our main components, with realistic props and states.
-<span class="n">4.</span> Start it with <span class="t">`npx designbench dev`</span> and send me the link.
-Don’t change application source files.</pre>
-          <div class="card-actions">
-            <button class="btn-primary" type="button" data-copy-btn data-label="Copy prompt">Copy prompt</button>
-            <p class="card-note">Works today with DesignBench 0.3.</p>
+        <div class="install-card" role="tabpanel" id="panel-prompt" aria-labelledby="mode-prompt">
+          <h3><svg class="logo agent-logo" aria-hidden="true"><use href="#logo-claude" data-agent-logo/></svg><span>Set up DesignBench for your project</span></h3>
+          <div class="quick-bench quick-framed" data-copy-scope>
+            <div class="quick-line">
+              <code><span class="caret tok-com" aria-hidden="true">&gt; </span><span data-copy-src>Set up DesignBench: https://designbench.pattern.garden/setup.md</span></code>
+              <button class="quick-copy" type="button" data-copy-btn aria-label="Copy the setup line"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-copy-label>Copy</span></button>
+            </div>
+          </div>
+          <div class="card-foot">
+            <p class="card-note" data-agent-where>Paste it into Claude Code with your project open.</p>
+            <button class="add-soon" type="button" disabled><svg class="logo agent-logo" aria-hidden="true"><use href="#logo-claude" data-agent-logo/></svg>Add to <span data-agent-tool>Claude Code</span><span class="soon">Soon</span></button>
           </div>
         </div>
 
@@ -1256,9 +1243,9 @@ Don’t change application source files.</pre>
 
   /* ---------- Agent picker ---------- */
   const AGENTS = {
-    claude:  { name: 'Claude',  tool: 'Claude Code', placeholder: 'Reply to Claude…', where: 'Open your project in Claude Code, in a terminal, your editor or the Code tab of the Claude desktop app, and paste this.' },
-    chatgpt: { name: 'ChatGPT', tool: 'Codex',       placeholder: 'Ask ChatGPT…',     where: 'Open your project in Codex, the coding agent that comes with ChatGPT, and paste this.' },
-    cursor:  { name: 'Cursor',  tool: 'Cursor',      placeholder: 'Ask Cursor…',      where: 'Open your project in Cursor, start an Agent chat, and paste this.' },
+    claude:  { name: 'Claude',  tool: 'Claude Code', placeholder: 'Reply to Claude…', where: 'Paste it into Claude Code with your project open.' },
+    chatgpt: { name: 'ChatGPT', tool: 'Codex',       placeholder: 'Ask ChatGPT…',     where: 'Paste it into Codex, the coding agent in ChatGPT, with your project open.' },
+    cursor:  { name: 'Cursor',  tool: 'Cursor',      placeholder: 'Ask Cursor…',      where: 'Paste it into a Cursor Agent chat with your project open.' },
   };
   const page = document.getElementById('page');
   const pills = [...document.querySelectorAll('[data-agent-pick]')];
@@ -1499,16 +1486,13 @@ Don’t change application source files.</pre>
     const clone = src.cloneNode(true);
     clone.querySelectorAll('.tok-com').forEach((n) => n.remove());
     const text = clone.textContent.trim();
-    const isPrimary = btn.classList.contains('btn-primary');
     const label = btn.querySelector('[data-copy-label]');
     const done = () => {
       btn.classList.add('is-done');
-      if (isPrimary) btn.textContent = 'Copied';
       if (label) label.textContent = 'Copied';
       clearTimeout(btn.copyTimer);
       btn.copyTimer = setTimeout(() => {
         btn.classList.remove('is-done');
-        if (isPrimary) btn.textContent = btn.dataset.label;
         if (label) label.textContent = 'Copy';
       }, 1600);
     };
