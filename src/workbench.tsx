@@ -112,7 +112,19 @@ export function Workbench({
   // The grid is a way of looking, so it survives the page reloads that source edits trigger (for this browser tab only).
   const gridKey = `design-workbench:${projectId}:grid`;
   const [grid, setGridState] = useState(false);
-  useEffect(() => { try { setGridState(sessionStorage.getItem(gridKey) === 'on'); } catch {} }, [gridKey]);
+  useEffect(() => {
+    // A link to one grid cell says so (`grid=off`): a tab opened from the grid can inherit the grid from the tab it came
+    // from, and would otherwise show the whole grid again. The mark is used once, then dropped from the address.
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('grid') === 'off') {
+      query.delete('grid');
+      window.history.replaceState(window.history.state, '', `${window.location.pathname}${query.toString() ? `?${query}` : ''}${window.location.hash}`);
+      try { sessionStorage.removeItem(gridKey); } catch {}
+      setGridState(false);
+      return;
+    }
+    try { setGridState(sessionStorage.getItem(gridKey) === 'on'); } catch {}
+  }, [gridKey]);
   const setGrid = (next: boolean) => {
     setGridState(next);
     if (next) setCompare(false);
@@ -460,7 +472,7 @@ export function Workbench({
               <VariantGrid key={entry.id} entry={entry} designs={designs} active={design} state={selection.state}
                 command={setupCommand} viewport={selection.viewport} restart={reset}
                 cellUrl={(id, state) => previewUrl(basePath, entry, { ...selection, state }, id)}
-                cellHref={(id, state) => `${basePath}?${new URLSearchParams({ ...selection, design: id, state })}`}
+                cellHref={(id, state) => `${basePath}?${new URLSearchParams({ ...selection, design: id, state, grid: 'off' })}`}
                 onOpen={(id, state) => { setGrid(false); update({ design: id, state, props: selection.props ?? '' }); }} />
             ) : (
               <div className={`dw-previews ${compare ? 'dw-compare' : ''}`}>
