@@ -93,6 +93,10 @@ test('the Code tab lists the files behind the source component and each saved va
   const ink = { id: 'ink', name: 'Ink', kind: 'exploration', source: '.design-workbench/ideas/button/ink/component.tsx' };
   assert.deepEqual(designFiles(fixtureEntry, source).map(file => file.path), ['Button.tsx', '.design-workbench/previews/button.tsx']);
   assert.deepEqual(designFiles(fixtureEntry, ink).map(file => file.path), ['component.tsx', 'index.tsx', 'variant.json'].map(name => `.design-workbench/ideas/button/ink/${name}`));
+  // A variant copied from a .jsx, .js, or .ts component keeps that extension; its fixture and info file are still listed.
+  for (const extension of ['jsx', 'js', 'ts'])
+    assert.deepEqual(designFiles(fixtureEntry, { ...ink, source: `.design-workbench/ideas/button/ink/component.${extension}` }).map(file => file.path), [`component.${extension}`, 'index.tsx', 'variant.json'].map(name => `.design-workbench/ideas/button/ink/${name}`));
+  assert.deepEqual(designFiles(fixtureEntry, { ...ink, source: '.design-workbench/ideas/button/ink/component.css' }).map(file => file.path), ['.design-workbench/ideas/button/ink/component.css']);
   assert.deepEqual(designFiles(fixtureEntry, { ...ink, files: [{ path: 'custom.tsx', label: 'Custom' }] }).map(file => file.path), ['custom.tsx']);
   assert.deepEqual(designFiles({ ...entry, source: 'welcome.tsx', fixture: 'welcome.tsx' }, { id: 'solid', name: 'Solid', source: 'welcome.tsx' }).map(file => file.path), ['welcome.tsx']);
   const html = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[{ ...fixtureEntry, designs:[source, ink] }], initialSelection:{ component:'button', design:'ink', state:'Default', viewport:'fit' } }));

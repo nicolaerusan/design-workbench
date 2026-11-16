@@ -7,7 +7,8 @@ const problem = message => Object.assign(new Error(message), { code: 'BAD_TARGET
 
 /**
  * Turns "Button, the Ink variant, disabled" into a workbench URL query.
- * Accepts ids or display names. Anything left out stays as it is when the component is already open.
+ * Accepts ids or display names. Anything left out stays as it is when the component is already open,
+ * including properties the user edited.
  */
 export function resolveTarget(catalog, current, { page, component, variant, state, viewport } = {}) {
   if (page === 'overview') return { search: '', label: 'the component overview' };
@@ -47,6 +48,9 @@ export function resolveTarget(catalog, current, { page, component, variant, stat
   if (shown) query.set('state', shown);
   const width = viewport ?? kept?.viewport;
   if (width && width !== 'fit') query.set('viewport', String(width));
+  // As in the workbench itself, the user's property edits survive a change of variant or width.
+  // A different state starts from that state's own properties.
+  if (kept?.editedProperties && shown === kept.state) query.set('props', JSON.stringify(kept.editedProperties));
   const picked = entry.variants.find(item => item.id === design);
   return { search: `?${query}`, label: [entry.name, picked && picked.kind !== 'source' ? `variant ${picked.name}` : '', shown ? `state ${shown}` : ''].filter(Boolean).join(', ') };
 }

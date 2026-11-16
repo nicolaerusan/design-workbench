@@ -86,13 +86,14 @@ export function designsFor(entry: WorkbenchEntry): DesignIdea[] {
     ? entry.designs
     : [{ id: 'current', name: 'Source component', source: entry.source }];
 }
-const savedVariant = /^(.*\.design-workbench\/ideas\/[^/]+\/[^/]+)\/component\.tsx$/;
+// A saved variant keeps its source file's extension: component.tsx, .ts, .jsx, or .js.
+const savedVariant = /^(.*\.design-workbench\/ideas\/[^/]+\/[^/]+)\/component\.[jt]sx?$/;
 /** The files behind a design, for showing what each variant actually is. */
 export function designFiles(entry: WorkbenchEntry, design: DesignIdea): SourceFile[] {
   if (design.files?.length) return design.files;
   const folder = savedVariant.exec(design.source)?.[1];
   if (folder) return [
-    { path: `${folder}/component.tsx`, label: 'Variant code', description: `A copy of the source component, saved for this variant. Edit this file to change ${design.name}; your app is unchanged until you promote it.` },
+    { path: design.source, label: 'Variant code', description: `A copy of the source component, saved for this variant. Edit this file to change ${design.name}; your app is unchanged until you promote it.` },
     { path: `${folder}/index.tsx`, label: 'Variant fixture', description: 'Renders the copy with the same properties and states as the source component.' },
     { path: `${folder}/variant.json`, label: 'Variant info', description: 'The variant’s name, the source file it was copied from, and the version it started from. Promotion uses this to detect source changes.' },
   ];

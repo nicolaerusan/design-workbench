@@ -223,6 +223,15 @@ test('open targets accept ids or names, keep what is open, and explain what does
   assert.equal(search({ page: 'overview' }), '');
   assert.equal(search({ page: 'settings' }), '?view=setup');
   assert.equal(resolveTarget(catalog, open, { variant: 'ink' }).label, 'Button, variant Ink, state Disabled');
+  // Properties the user edited stay when only the variant or width changes, and reset with the state or component.
+  const edited = viewOf('http://localhost:7070', { component: 'button', design: 'ink', state: 'Disabled', props: '{"label":"Send"}' });
+  const props = '&props=%7B%22label%22%3A%22Send%22%7D';
+  const from = request => resolveTarget(catalog, edited, request).search;
+  assert.equal(from({ viewport: '375' }), `?component=button&design=ink&state=Disabled&viewport=375${props}`);
+  assert.equal(from({ variant: 'source' }), `?component=button&design=current&state=Disabled${props}`);
+  assert.equal(from({ state: 'disabled' }), `?component=button&design=ink&state=Disabled${props}`);
+  assert.equal(from({ state: 'Default' }), '?component=button&design=ink&state=Default');
+  assert.equal(from({ component: 'card' }), '?component=card');
   assert.throws(() => resolveTarget(catalog, open, { component: 'card', variant: 'ink' }), /Card has no variant "ink"\. Variants: source \(Source component\)\./);
   assert.throws(() => resolveTarget(catalog, open, { component: 'dialog' }), /No component matches "dialog"\. Components: button, card\./);
   assert.throws(() => resolveTarget(catalog, open, { viewport: '500' }), /viewport must be one of/);
