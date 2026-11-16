@@ -66,7 +66,10 @@ function describeView({ view, viewAt, tabOpen, url }) {
   let subject, detail = '', advice = '';
   if (view.page === 'component') {
     subject = view.component.name;
-    detail = `, showing ${view.variant.kind === 'source' ? 'the source component their app uses' : `the saved variant "${view.variant.name}"`} in the state "${view.state}"${view.comparing ? ', with every variant side by side' : ''}`;
+    const shown = `${view.variant.kind === 'source' ? 'the source component their app uses' : `the saved variant "${view.variant.name}"`} in the state "${view.state}"`;
+    // In the grid nothing is hidden: the selected cell is only the one the Properties tab describes.
+    detail = view.grid ? `, as a grid with every variant at every state on screen; the selected cell is ${shown}`
+      : `, showing ${shown}${view.comparing ? ', with every variant side by side' : ''}`;
     advice = view.variant.kind === 'source'
       ? ` Editing ${view.component.source} changes the app itself; to try an idea without that, create a variant.`
       : ` Editing ${view.variant.files[0]?.path ?? 'its files'} changes only this preview.`;

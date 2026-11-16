@@ -331,6 +331,20 @@
       "status": "needs-review"
     },
     {
+      "id": "src/variant-grid.tsx#GridToggle",
+      "file": "src/variant-grid.tsx",
+      "exportName": "GridToggle",
+      "name": "GridToggle",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/variant-grid.tsx#VariantGrid",
+      "file": "src/variant-grid.tsx",
+      "exportName": "VariantGrid",
+      "name": "VariantGrid",
+      "status": "needs-review"
+    },
+    {
       "id": "src/variant-guide.tsx#DesignPicker",
       "file": "src/variant-guide.tsx",
       "exportName": "DesignPicker",

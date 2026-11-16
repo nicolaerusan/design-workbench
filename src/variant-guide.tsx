@@ -30,14 +30,17 @@ function DesignThumbnail({ design, thumbnailUrl, size = 'small' }: { design: Des
  * Two separate controls: the source component the app uses today, and a menu of variants to try instead.
  * Hovering the source explains where it comes from.
  */
-export function DesignPicker({ entry, designs, active, compare, thumbnailUrl, onSelect, onCompare }: {
+export function DesignPicker({ entry, designs, active, compare, grid = false, thumbnailUrl, onSelect, onCompare }: {
   entry: WorkbenchEntry; designs: DesignIdea[]; active: DesignIdea; compare: boolean;
+  /** The grid view is showing every design, so neither control is the one on screen. */
+  grid?: boolean;
   thumbnailUrl?: (design: string) => string;
   onSelect: (design: string) => void; onCompare: () => void;
 }) {
   const { source, variants } = splitDesigns(designs);
-  const sourceActive = !compare && active.id === source.id;
-  const variantActive = !compare && !sourceActive;
+  const single = !compare && !grid;
+  const sourceActive = single && active.id === source.id;
+  const variantActive = single && !sourceActive;
   return <div className="dw-design-picker" role="group" aria-label="Design">
     <Tooltip>
       <TooltipTrigger asChild>

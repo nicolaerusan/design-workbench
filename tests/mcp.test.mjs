@@ -19,7 +19,7 @@ const entries = [
   { id: 'card', name: 'Card', group: 'Layout', source: 'src/Card.tsx', description: 'Draft fixture: review props, providers, and states.', width: 400, variants: ['Default'], draft: true },
 ];
 const catalog = describeCatalog('Fixture', entries, [{ source: 'src/Button.tsx', status: 'previewed' }, { source: 'src/Card.tsx', status: 'previewed' }, { source: 'src/Dialog.tsx', status: 'missing' }]);
-const viewOf = (base, selection, comparing = false) => ({ ...describeView(entries, { page: 'component', comparing, selection: { viewport: 'fit', ...selection } }), url: `${base}/?${new URLSearchParams(selection)}` });
+const viewOf = (base, selection, { comparing = false, grid = false } = {}) => ({ ...describeView(entries, { page: 'component', comparing, grid, selection: { viewport: 'fit', ...selection } }), url: `${base}/?${new URLSearchParams(selection)}` });
 
 async function project(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'designbench-mcp-')));
@@ -99,6 +99,12 @@ test('designbench mcp tells an agent what is open, opens views, and lists compon
   assert.deepEqual(view.variant.files.map(file => file.path), ['component.tsx', 'index.tsx', 'variant.json'].map(name => `.design-workbench/ideas/button/ink/${name}`));
   assert.deepEqual(view.editedProperties, { label: 'Send' });
   assert.equal(view.previewUrl, `${base}/button?design=ink&state=Disabled&props=%7B%22label%22%3A%22Send%22%7D`);
+
+  // In the grid view the agent hears that every variant and state is on screen, and which cell is selected.
+  await page({ tab: 'one', view: viewOf(base, { component: 'button', design: 'ink', state: 'Disabled' }, { grid: true }) });
+  const grid = await mcp.tool('get_current_view');
+  assert.match(grid.text, /^The user has Button open in DesignBench, as a grid with every variant at every state on screen; the selected cell is the saved variant "Ink" in the state "Disabled"\. Editing /);
+  assert.equal(details(grid.text).grid, true);
 
   const listed = details((await mcp.tool('list_components')).text);
   assert.equal(listed.summary, '2 components. 2 of 3 component files have a preview.');

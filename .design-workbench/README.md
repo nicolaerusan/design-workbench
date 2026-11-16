@@ -4,7 +4,7 @@ DesignBench previews its own components here. Run `npm run design:dev` at the re
 
 Every file in `previews/` renders the real component from `src/`, so source edits refresh the previews. The surrounding workbench shell uses the compiled package; restart the command to rebuild that shell after changing it.
 
-- `previews/` holds one fixture per component: the UI primitives in `src/ui/`, the workbench's parts (design picker, Variants and Code panels, inspector, thumbnails), and its pages (the workbench itself and Settings).
+- `previews/` holds one fixture per component: the UI primitives in `src/ui/`, the workbench's parts (design picker, variant grid, Variants and Code panels, inspector, thumbnails), and its pages (the workbench itself and Settings).
 - `frame.tsx` wraps each preview in the `.dw-workbench` scope the styles need. `samples.ts` is a stand-in project component for parts that need an entry and designs.
 - The inner Workbench preview lists only a few small parts and never itself, so nesting stops after one level.
 

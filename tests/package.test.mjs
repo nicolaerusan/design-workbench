@@ -118,6 +118,47 @@ test('the Code tab lists the files behind the source component and each saved va
   assert.doesNotMatch(withActions, /variant promote button ink/);
 });
 
+test('the grid view lays every variant against every state and asks an agent for more', async () => {
+  const { VariantGrid } = await import('../dist/variant-grid.js');
+  const { variantsPrompt } = await import('../dist/index.js');
+  const source = { id: 'current', name: 'Source component', source: 'Button.tsx' };
+  const ink = { id: 'ink', name: 'Ink', kind: 'exploration', source: '.design-workbench/ideas/button/ink/component.tsx' };
+  const soft = { id: 'soft', name: 'Soft', kind: 'exploration', source: '.design-workbench/ideas/button/soft/component.tsx' };
+  const states = ['Default', 'Loading', 'Disabled'];
+  // The app's component is listed after a variant here; the grid still puts it first.
+  const button = { ...entry, variants: states, designs: [ink, source, soft] };
+  const html = renderToStaticMarkup(createElement(VariantGrid, {
+    entry: button, designs: button.designs, active: ink, state: 'Loading', command: 'npx designbench', onOpen() {},
+    cellUrl: (design, state) => `/design/button?design=${design}&state=${state}`,
+    cellHref: (design, state) => `/design?component=button&design=${design}&state=${state}`,
+  }));
+  // Columns are the states.
+  assert.deepEqual([...html.matchAll(/<th scope="col" class="dw-grid-state">([^<]+)<\/th>/g)].map(match => match[1]), states);
+  // Rows are the variants, each named and tagged.
+  assert.deepEqual([...html.matchAll(/<span class="dw-grid-name">([^<]+)<\/span><span class="dw-grid-tag">([^<]+)<\/span>/g)].map(match => `${match[1]}: ${match[2]}`),
+    ['Source component: Source', 'Ink: Variant', 'Soft: Variant']);
+  // One cell for each variant at each state. Each is a link to that view, so it also opens in a new tab.
+  const cells = [...html.matchAll(/<a class="dw-grid-cell" data-cell="([^"]+)" href="([^"]+)" aria-label="([^"]+)"/g)].map(match => match.slice(1));
+  assert.deepEqual(cells.map(cell => cell[0]), ['current', 'ink', 'soft'].flatMap(design => states.map(state => `${design}/${state}`)));
+  assert.deepEqual(cells[5], ['ink/Disabled', '/design?component=button&amp;design=ink&amp;state=Disabled', 'Open Ink, Disabled']);
+  // Only the selected variant and state is marked.
+  assert.deepEqual([...html.matchAll(/data-cell="([^"]+)"[^>]*aria-current="true"/g)].map(match => match[1]), ['ink/Loading']);
+  // Previews start only once their cell nears the visible canvas, so the server sends none.
+  assert.doesNotMatch(html, /<iframe/);
+  // The last row copies a prompt: the agent makes variants, the workbench only asks.
+  assert.match(html, /<tfoot>.*New variants.*<td colSpan="3">.*Your coding agent makes variants\..*>Copy prompt<\/button>.*<\/tfoot>/);
+  assert.match(variantsPrompt('npx designbench', { component: button.name }), /^Create 3 visual variants of the Button component\./);
+
+  // The toggle is offered when there is something to lay out: more than one state, or more than one variant.
+  const page = entries => renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries, initialSelection:{ component:'button', design:'current', state:'Default', viewport:'fit' } }));
+  const toggle = /<button[^>]*class="dw-design-choice dw-grid-toggle"[^>]*aria-pressed="false"[^>]*>.*?Grid<\/button>/;
+  assert.match(page([entry]), toggle, 'two states, one variant');
+  assert.match(page([{ ...entry, variants: ['Default'], designs: [source, ink] }]), toggle, 'one state, two variants');
+  assert.doesNotMatch(page([{ ...entry, variants: ['Default'] }]), /dw-grid-toggle/, 'one state, one variant');
+  // Until it is pressed the page shows one preview, and "Compare all side by side" stays in the variant menu's place.
+  assert.doesNotMatch(page([{ ...entry, designs: [source, ink] }]), /dw-grid-canvas/);
+});
+
 test('Settings hands the work to a coding agent: agent choice, populate prompt, coverage, and drafts', async () => {
   const { populatePrompt, refreshPrompt, memoryLine, agents, isDraft } = await import('../dist/index.js');
   assert.deepEqual(agents.map(agent => agent.label), ['Claude', 'ChatGPT', 'Cursor', 'Other agents']);
@@ -204,7 +245,12 @@ test('Settings offers an MCP connection where the workbench supports one, with s
     state: 'Disabled', viewport: '375', comparing: true, properties: { label: 'Send' }, editedProperties: { label: 'Send' },
     previewPath: '/design/button?design=ink&state=Disabled&props=%7B%22label%22%3A%22Send%22%7D',
   });
-  assert.deepEqual(describeView([controlled], { page: 'settings', comparing: false, selection: { component: 'button', design: 'current', state: 'Default', viewport: 'fit' } }), { page: 'settings' });
+  // The grid is reported the same way, so an agent knows every state is on screen.
+  const gridView = describeView([controlled], { page: 'component', comparing: false, grid: true, selection: { component: 'button', design: 'ink', state: 'Disabled', viewport: 'fit' } }, '/design');
+  assert.equal(gridView.grid, true);
+  assert.equal('comparing' in gridView, false);
+  assert.equal('grid' in view, false);
+  assert.deepEqual(describeView([controlled], { page: 'settings', comparing: false, grid: true, selection: { component: 'button', design: 'current', state: 'Default', viewport: 'fit' } }), { page: 'settings' });
   const described = describeCatalog('Fixture', [controlled], [{ source: 'Button.tsx', status: 'previewed', reason: 'ignored' }]);
   assert.deepEqual(described.components[0].states, ['Default', 'Disabled']);
   assert.deepEqual(described.components[0].variants, [{ id: 'current', name: 'Source component', kind: 'source', source: 'Button.tsx' }, { id: 'ink', name: 'Ink', kind: 'variant', source: ink.source }]);

@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 
-type Bounds = { x: number; y: number; width: number; height: number };
+/** `frame` is the height of the preview's own viewport when it was measured. */
+type Bounds = { x: number; y: number; width: number; height: number; frame: number };
 const replaced = /^(img|svg|canvas|video|picture|input|button|select|textarea|progress|meter)$/i;
 const paints = (style: CSSStyleDeclaration) =>
   !/^(transparent|rgba\(0, 0, 0, 0\))$/.test(style.backgroundColor) || style.backgroundImage !== 'none' || style.boxShadow !== 'none'
@@ -30,7 +31,7 @@ function contentBounds(doc: Document): Bounds | null {
     if (style.display === 'none' || style.visibility === 'hidden' || element.tagName === 'SCRIPT' || element.tagName === 'STYLE') continue;
     if (replaced.test(element.tagName) || paints(style)) add(element.getBoundingClientRect());
   }
-  return Number.isFinite(left) ? { x: left, y: top, width: right - left, height: bottom - top } : null;
+  return Number.isFinite(left) ? { x: left, y: top, width: right - left, height: bottom - top, frame: view.innerHeight } : null;
 }
 
 /**
@@ -40,8 +41,15 @@ function contentBounds(doc: Document): Bounds | null {
  * otherwise fills the width (best for tiles that hold both buttons and whole pages).
  * Content fitting needs a same-origin preview and falls back to `width`.
  */
-export function PreviewThumbnail({ title, url, width, renderWidth, fit = 'width', className = 'dw-tile-thumbnail' }: {
+export function PreviewThumbnail({ title, url, width, renderWidth, frameHeight, fit = 'width', className = 'dw-tile-thumbnail', onContent }: {
   title: string; url: string; width?: number; renderWidth?: number; fit?: 'width' | 'content' | 'auto'; className?: string;
+  /**
+   * The height of the preview's own frame, which grows only to hold taller content. A preview that fills its frame,
+   * such as a whole page, is then this tall whatever the size of the box. Otherwise the frame follows the box.
+   */
+  frameHeight?: number;
+  /** Told the size of what the preview paints, each time it is measured. Lets a layout make room for it. */
+  onContent?: (size: { width: number; height: number }) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
@@ -73,6 +81,9 @@ export function PreviewThumbnail({ title, url, width, renderWidth, fit = 'width'
     const late = window.setTimeout(measure, 300); // after web fonts settle
     return () => { observer.disconnect(); window.clearTimeout(timer); window.clearTimeout(late); };
   }, [fit, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  const report = useRef(onContent);
+  report.current = onContent;
+  useEffect(() => { if (bounds) report.current?.({ width: bounds.width, height: bounds.height }); }, [bounds?.width, bounds?.height]); // eslint-disable-line react-hooks/exhaustive-deps
   let transform: string, height: number, fitted = false;
   const pad = 10;
   const contentScale = bounds && box.width ? Math.min(1, box.width / (bounds.width + pad * 2), box.height / (bounds.height + pad * 2)) : 0;
@@ -81,11 +92,14 @@ export function PreviewThumbnail({ title, url, width, renderWidth, fit = 'width'
     fitted = true;
     const x = box.width / 2 - (bounds.x + bounds.width / 2) * scale, y = box.height / 2 - (bounds.y + bounds.height / 2) * scale;
     transform = `translate(${x}px, ${y}px) scale(${scale})`;
-    height = Math.max(480, bounds.y + bounds.height + pad);
+    // The frame grows to hold taller content. Content that already fits is left alone: a page that fills its frame
+    // would otherwise grow with it, and the two would chase each other. The cap stops any other runaway.
+    const bottom = bounds.y + bounds.height, shortest = frameHeight ?? 480;
+    height = Math.min(Math.max(shortest, bottom > bounds.frame ? bottom + pad : bounds.frame), Math.max(shortest, 4000));
   } else {
     const scale = box.width / naturalWidth;
     transform = `scale(${scale})`;
-    height = Math.max(fit === 'width' ? 0 : 480, box.height / scale);
+    height = frameHeight ?? Math.max(fit === 'width' ? 0 : 480, box.height / scale);
   }
   return <div ref={ref} className={className} data-fitted={fitted || undefined} aria-hidden="true" inert>
     {box.width > 0 && <iframe ref={frame} title={`${title} thumbnail`} src={url} tabIndex={-1} scrolling="no" loading="lazy" allow="camera 'none'; microphone 'none'"
