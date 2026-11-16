@@ -49,7 +49,13 @@
 .dw-brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #deded9; background: white; border-radius: 10px; }
 .dw-brand-mark svg { width: 19px; height: 19px; }
 .dw-search { position: relative; display: block; }
-.dw-search input { width: 100%; height: 36px; border: 1px solid #e0e0dc; border-radius: 8px; background: white; padding: 9px 64px 9px 14px; box-shadow: none; font-size: 13px; }
+.dw-search input { width: 100%; height: 36px; border: 1px solid #e0e0dc; border-radius: 999px; background: white; padding: 0 56px 0 34px; box-shadow: none; font-size: 13px; }
+.dw-search input::placeholder { color: transparent; }
+.dw-search-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; color: #8a8a83; font-size: 13px; pointer-events: none; }
+.dw-search-hint svg { flex-shrink: 0; }
+/* Focused or filled, the icon moves to the start like a native search field. */
+.dw-search:focus-within .dw-search-hint, .dw-search:has(input:not(:placeholder-shown)) .dw-search-hint { justify-content: flex-start; }
+.dw-search:has(input:not(:placeholder-shown)) .dw-search-hint > span { visibility: hidden; }
 .dw-search-shortcut { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; transition: opacity 120ms; }
 .dw-search:focus-within .dw-search-shortcut { opacity: 1; }
 @media (hover: hover) { .dw-search:hover .dw-search-shortcut { opacity: 1; } }
@@ -63,7 +69,6 @@
 .dw-nav a[aria-current] { background: #e9e9e5; color: #20201e; font-weight: 500; }
 .dw-workbench .dw-coverage-button { margin-top: 12px; justify-content: space-between; border-top: 1px solid var(--dw-line); border-radius: 10px; }
 .dw-coverage-button span { color: var(--dw-muted); }
-.dw-sidebar-footer { font-size: 11px; color: #8a8a83; padding: 10px 10px 0; }
 .dw-nav-collapsed .dw-sidebar { display: none; }
 .dw-main { flex: 1; min-width: 0; }
 .dw-header { flex-shrink: 0; padding: 20px 24px 18px; }
@@ -94,10 +99,6 @@
 .dw-details li { margin: 8px 0; }
 .dw-details li p { font-size: 12px; color: var(--dw-muted); margin: 4px 0; }
 .dw-note { font-size: 12px; color: var(--dw-muted); line-height: 1.65; }
-.dw-references form { display: flex; flex-direction: column; gap: 12px; }
-.dw-references label { font-size: 12px; color: var(--dw-muted); display: flex; flex-direction: column; gap: 5px; }
-.dw-references input, .dw-references textarea { width: 100%; border: 1px solid var(--dw-line); border-radius: 8px; padding: 9px 12px; background: white; color: var(--dw-ink); font-size: 12px; resize: vertical; box-shadow: none; }
-.dw-references button { font-size: 12px; margin-right: 6px; }
 .dw-references a { text-decoration: underline; text-underline-offset: 3px; font-weight: 500; }
 .dw-coverage { padding: 10px 32px 32px; }
 .dw-coverage h2 { font-size: 20px; font-weight: 500; }
@@ -302,20 +303,35 @@
 .dw-breadcrumb .db-breadcrumb-list { flex-wrap: nowrap; font-size: 13px; }
 .dw-breadcrumb .db-breadcrumb-item { min-width: 0; white-space: nowrap; }
 .dw-breadcrumb .db-breadcrumb-page { overflow: hidden; text-overflow: ellipsis; color: var(--dw-ink); font-weight: 500; }
+/* Only the current page truncates; earlier crumbs and the chevrons keep their size. */
+.dw-breadcrumb .db-breadcrumb-item:not(:last-child), .dw-breadcrumb .db-breadcrumb-separator { flex-shrink: 0; }
 .dw-topbar-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .dw-workbench .dw-topbar-actions > button { height: 32px; min-height: 32px; padding: 0 10px; }
 .dw-open { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 12px; border: 1px solid var(--dw-line); border-radius: 8px; background: white; font-size: 13px; font-weight: 500; }
 .dw-open:hover { background: #f3f3f1; }
 .dw-topbar-divider { width: 1px; height: 20px; margin: 0 4px; background: var(--dw-line); }
 
-/* Segmented view controls: the inspector layout and the variant picker. */
-.dw-view-toggle, .dw-design-list { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px; padding: 2px; border: 1px solid var(--dw-line); border-radius: 8px; background: #f5f5f3; }
-.dw-workbench .db-toggle, .dw-workbench .dw-design-choice { height: 26px; min-height: 26px; border: 0; border-radius: 6px; background: transparent; color: #7a7a73; box-shadow: none; }
-.dw-workbench .db-toggle { width: 30px; padding: 0; }
-.dw-workbench .dw-design-choice { padding: 0 10px; font-size: 13px; }
-.dw-workbench .db-toggle:hover, .dw-workbench .dw-design-choice:hover { background: #ebebe8; color: var(--dw-ink); }
+/* Segmented view control: the inspector layout. */
+.dw-view-toggle { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px; padding: 2px; border: 1px solid var(--dw-line); border-radius: 8px; background: #f5f5f3; }
+.dw-workbench .db-toggle { width: 30px; height: 26px; min-height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #7a7a73; box-shadow: none; }
+.dw-workbench .db-toggle:hover { background: #ebebe8; color: var(--dw-ink); }
 /* Tooltip triggers overwrite data-state, so selection is read from ARIA. */
-.dw-workbench .db-toggle:is([aria-checked=true],[aria-pressed=true]), .dw-workbench .dw-design-choice[aria-pressed=true] { background: white; color: var(--dw-ink); box-shadow: 0 1px 2px #0000001a, 0 0 0 1px #0000000a; }
+.dw-workbench .db-toggle:is([aria-checked=true],[aria-pressed=true]) { background: white; color: var(--dw-ink); box-shadow: 0 1px 2px #0000001a, 0 0 0 1px #0000000a; }
+
+/* Design picker: the source component and the variant menu are two separate controls, not a toggle. */
+.dw-design-picker { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.dw-workbench .dw-design-choice { gap: 6px; height: 32px; min-height: 32px; padding: 0 10px; border: 1px solid var(--dw-line); border-radius: 8px; background: white; color: #6b6b65; font-size: 13px; font-weight: 500; box-shadow: none; }
+.dw-workbench .dw-design-choice:hover { background: #f5f5f3; color: var(--dw-ink); }
+.dw-design-choice > svg { flex-shrink: 0; color: #9b9b94; }
+.dw-workbench .dw-design-choice:is([aria-pressed=true],[data-active=true]) { border-color: #cfcfc9; background: #f3f3f1; color: var(--dw-ink); }
+.dw-design-choice:is([aria-pressed=true],[data-active=true]) > svg:first-child { color: var(--dw-ink); }
+.dw-workbench .dw-design-variants[data-state=open] { border-color: #cfcfc9; background: #f3f3f1; }
+.dw-design-variant-label { color: var(--dw-muted); font-weight: 400; }
+.dw-design-variant-value { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dw-design-source-tip { display: flex; flex-direction: column; gap: 2px; max-width: 300px; }
+.dw-design-source-tip strong { font-weight: 600; }
+.dw-design-source-tip span { color: #d4d4cf; }
+.dw-design-source-tip code { color: white; font-size: 11px; overflow-wrap: anywhere; }
 
 /* The header leads straight into the preview; its toolbar holds view settings. */
 .dw-stage-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; flex-shrink: 0; min-height: 32px; margin-bottom: 12px; }
@@ -343,18 +359,12 @@
 .dw-controls-panel h2, .dw-controls-panel .dw-section-label { margin: 0 0 6px; color: var(--dw-ink); font-size: 13px; font-weight: 600; }
 .dw-controls-panel p { font-size: 12px; line-height: 1.6; color: var(--dw-muted); }
 .dw-controls-panel .dw-note { margin: 6px 0 0; }
-.dw-feedback-panel { display: flex; flex-direction: column; gap: 18px; }
-.dw-feedback-panel > * + * { padding-top: 18px; border-top: 1px solid var(--dw-line); }
-.dw-feedback-panel .dw-references > p { margin: 0 0 12px; }
+.dw-panel-stack { display: flex; flex-direction: column; gap: 18px; }
+.dw-panel-stack > * + * { padding-top: 18px; border-top: 1px solid var(--dw-line); }
 .dw-references ul { list-style: none; margin: 0; padding: 0; }
 .dw-references ul:not(:empty) { margin-bottom: 12px; }
-.dw-feedback-panel .dw-contexts { margin: 0; }
-.dw-feedback-panel .dw-context-preview .dw-canvas iframe { height: 360px; }
-.dw-variant-guide > p { margin: 0 0 12px; }
-.dw-variant-guide .dw-agent-prompt { max-height: 180px; overflow: auto; margin: 12px 0 0; padding: 10px 12px; border: 1px solid var(--dw-line); border-radius: 8px; background: white; color: #62625a; font: 12px/1.6 var(--dw-font-mono); overflow-wrap: anywhere; }
-.dw-variant-promotion { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--dw-line); }
-.dw-variant-promotion h3 { margin: 0 0 6px; font-size: 13px; font-weight: 600; }
-.dw-variant-promotion pre { margin: 8px 0; padding: 10px 12px; border-radius: 8px; background: #f0f0ed; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dw-panel-stack .dw-contexts { margin: 0; }
+.dw-panel-stack .dw-context-preview .dw-canvas iframe { height: 360px; }
 
 /* Panel dividers are hairlines; the library keeps a wider pointer target. */
 .dw-preview-workspace .db-resizable-handle { width: 1px; background: var(--dw-line); }
@@ -383,6 +393,14 @@
 .dw-tree .dw-tree-children { margin-left: 13px; padding-left: 8px; border-left: 1px solid var(--dw-line); }
 .dw-tree-folder { display: flex; align-items: center; gap: 6px; min-width: 0; height: 26px; padding: 0 6px; color: var(--dw-muted); }
 .dw-tree-folder svg, .dw-tree-file svg { flex-shrink: 0; color: #9b9b94; }
+/* File types: React components, scripts, data, and styles each have their own mark. */
+.dw-tree-file .dw-file-icon-react { color: #087ea4; }
+.dw-tree-file .dw-file-icon-ts { color: #3178c6; }
+.dw-tree-file .dw-file-icon-js { color: #e8c53a; }
+.dw-file-icon-ts .dw-file-icon-label { fill: white; }
+.dw-file-icon-js .dw-file-icon-label { fill: #20201e; }
+.dw-tree-file .dw-file-icon-json { color: #b7791f; }
+.dw-tree-file .dw-file-icon-css { color: #7e57c2; }
 /* Long folder paths keep their meaningful end; the start is elided. */
 .dw-tree-path, .dw-file-view h2 { min-width: 0; overflow: hidden; direction: rtl; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
 .dw-tree-path { font: 12px/1.4 var(--dw-font-mono); }
@@ -406,3 +424,121 @@
 .dw-code-line { display: block; min-height: 1.6em; padding-right: 14px; white-space: pre; }
 .dw-code-line::before { content: counter(line); counter-increment: line; position: sticky; left: 0; display: inline-block; width: 4ch; margin-right: 12px; padding-right: 8px; background: white; color: #b0b0a9; text-align: right; user-select: none; }
 .dw-file-status { padding: 14px; border: 1px dashed var(--dw-line); border-radius: 8px; }
+
+/* The variant menu: a live thumbnail of each variant at the current state. */
+.dw-workbench .dw-design-variants { padding: 0 8px 0 10px; }
+.dw-design-variants > svg:last-child { color: #8a8a83; }
+.db-menu-content.dw-design-menu { min-width: 240px; max-width: 340px; }
+.dw-design-menu .dw-design-menu-item { gap: 10px; padding-top: 5px; padding-bottom: 5px; }
+.dw-design-menu-text { display: flex; flex-direction: column; min-width: 0; }
+.dw-design-menu-text small { overflow: hidden; color: #73736e; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.dw-design-thumbnail { position: relative; flex-shrink: 0; overflow: hidden; border: 1px solid #e8e8e6; border-radius: 6px; background: #fafaf9; }
+.dw-design-thumbnail-small { width: 72px; height: 44px; }
+.dw-design-thumbnail-medium { width: 84px; height: 52px; }
+.dw-design-thumbnail iframe { position: absolute; left: 0; top: 0; border: 0; background: transparent; transform-origin: top left; pointer-events: none; transition: opacity 160ms; }
+.dw-design-count { min-width: 18px; padding: 0 5px; border-radius: 999px; background: #e7e7e3; color: var(--dw-muted); font-size: 11px; line-height: 16px; text-align: center; }
+.dw-references li + li { margin-top: 8px; }
+.dw-references li p { margin: 2px 0 0; }
+
+/* Variants tab. */
+.dw-variants > p { margin: 0 0 14px; }
+.dw-variants code { font-size: 12px; }
+.dw-variant-list { list-style: none; margin: 0 0 16px; padding: 0; border: 1px solid var(--dw-line); border-radius: 8px; background: white; }
+.dw-variant-list li { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px; }
+.dw-variant-list li > div { flex: 1; }
+.dw-variant-list li + li { border-top: 1px solid var(--dw-line); }
+.dw-variant-list li > div { display: flex; flex-direction: column; min-width: 0; }
+.dw-variant-list strong { font-weight: 500; }
+.dw-variant-list li span:not(.dw-tree-showing) { overflow: hidden; color: var(--dw-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.dw-variants-empty { padding: 12px; border: 1px dashed var(--dw-line); border-radius: 8px; }
+.dw-variant-promotion { margin-bottom: 16px; padding: 12px; border-radius: 8px; background: #f0f0ed; }
+.dw-variant-promotion h3 { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+.dw-variant-promotion p { margin: 0; }
+.dw-variant-promotion pre { margin: 8px 0; padding: 8px 10px; border-radius: 6px; background: white; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dw-variant-promotion code { overflow-wrap: anywhere; }
+.dw-workbench .dw-promote-button { gap: 6px; height: 32px; min-height: 32px; margin-top: 10px; padding: 0 12px; border-color: #20201e; background: #20201e; color: white; }
+.dw-workbench .dw-promote-button:hover:not(:disabled) { background: #3a3a37; }
+.dw-promote-confirm { display: flex; flex-wrap: wrap; gap: 6px; }
+.dw-workbench .dw-promote-confirm > button:not(.dw-promote-button) { height: 32px; min-height: 32px; margin-top: 10px; }
+.dw-controls-panel .dw-promote-error { margin-top: 8px; color: #a1361f; }
+.dw-promoted { display: flex; gap: 8px; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; background: #eaf2ec; color: #2f5a45; }
+.dw-promoted > svg { flex-shrink: 0; margin-top: 3px; }
+.dw-controls-panel .dw-promoted p { margin: 0; color: inherit; }
+.dw-promoted code { font-size: 11px; overflow-wrap: anywhere; }
+.dw-spin { animation: dw-spin 800ms linear infinite; }
+@keyframes dw-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .dw-spin { animation: none; } }
+.dw-create-variant { border-top: 1px solid var(--dw-line); }
+.dw-workbench .dw-create-variant-trigger { justify-content: flex-start; gap: 6px; width: 100%; height: 40px; min-height: 40px; padding: 0 2px; border: 0; border-radius: 0; background: transparent; font-weight: 600; }
+.dw-workbench .dw-create-variant-trigger:hover { background: transparent; }
+.dw-create-variant-trigger > svg { color: #8a8a83; transition: transform 120ms; }
+.dw-create-variant-trigger[data-state=open] > svg { transform: rotate(90deg); }
+.dw-create-variant-body { padding: 0 0 8px 22px; }
+.dw-create-variant-body p { margin: 0 0 12px; }
+.dw-create-variant-body .dw-agent-prompt { width: 100%; margin-top: 10px; padding: 8px 10px; border: 1px solid var(--dw-line); border-radius: 8px; color: #62625a; font: 12px/1.5 var(--dw-font-mono); resize: vertical; }
+
+/* Settings: choose an agent, then copy a prompt for it. */
+.dw-setup-content .dw-setup-card { max-width: 680px; }
+.dw-setup-card > h2 + p { max-width: 560px; font-size: 13px; }
+.dw-agent-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 18px 0 10px; }
+.dw-agent-picker { display: flex; flex-wrap: wrap; gap: 4px; }
+.dw-workbench .dw-agent-choice { min-height: 34px; padding: 0 14px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--dw-muted); font-size: 13px; font-weight: 500; }
+.dw-workbench .dw-agent-choice:hover { background: #f3f3f1; color: var(--dw-ink); }
+.dw-workbench .dw-agent-choice[data-state=on] { border-color: var(--dw-line); background: white; color: var(--dw-ink); box-shadow: 0 1px 3px #00000014; }
+.dw-setup-card .dw-agent-where { margin: 0 0 18px; font-size: 13px; }
+.dw-prompt-card { margin-bottom: 10px; padding: 14px 16px 8px; border: 1px solid var(--dw-line); border-radius: 12px; background: white; }
+.dw-prompt-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.dw-prompt-card-head > div { min-width: 0; }
+.dw-prompt-card-head p { margin: 4px 0 0; }
+.dw-workbench .dw-copy-button { flex-shrink: 0; gap: 6px; }
+.dw-copy-button svg { width: 14px; height: 14px; }
+.dw-setup-card .dw-coverage-summary { margin-top: 8px; color: var(--dw-ink); }
+.dw-coverage-summary strong { font-weight: 600; }
+.dw-workbench .dw-inline-link { display: inline; min-height: 0; padding: 0; border: 0; border-radius: 2px; background: transparent; color: inherit; font-size: inherit; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.dw-workbench .dw-inline-link:hover { background: transparent; color: var(--dw-muted); }
+.dw-workbench .dw-prompt-reveal { justify-content: flex-start; gap: 4px; min-height: 28px; margin: 6px 0 0 -4px; padding: 0 4px; border: 0; background: transparent; color: var(--dw-muted); font-size: 12px; font-weight: 400; }
+.dw-workbench .dw-prompt-reveal:hover { background: transparent; color: var(--dw-ink); }
+.dw-prompt-reveal > svg { transition: transform 120ms; }
+.dw-prompt-reveal[data-state=open] > svg { transform: rotate(90deg); }
+.dw-setup-card pre.dw-prompt-text { max-height: 320px; margin: 6px 0 8px; overflow: auto; font-size: 12px; line-height: 1.6; }
+.dw-setup-card .dw-copy-fallback { width: 100%; margin: 10px 0 0; padding: 8px 10px; border: 1px solid var(--dw-line); border-radius: 8px; color: #62625a; font: 12px/1.5 var(--dw-font-mono); resize: vertical; }
+.dw-prompt-card + .dw-setup-usage { margin-top: 22px; }
+.dw-setup-commands { margin-top: 18px; border-top: 1px solid var(--dw-line); }
+.dw-setup-commands ol { margin-top: 14px; }
+@media (max-width: 520px) { .dw-prompt-card-head { flex-direction: column; gap: 10px; } }
+
+/* Generated previews nobody has finished yet. */
+.dw-nav-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dw-nav-draft { flex-shrink: 0; padding: 0 6px; border-radius: 999px; background: #f4ecd9; color: #7a5a12; font-size: 10px; font-weight: 500; line-height: 16px; }
+
+/* Coverage page: the same populate prompt, next to the list of gaps. */
+.dw-coverage-action { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; padding: 12px 14px; border: 1px solid var(--dw-line); border-radius: 12px; background: white; }
+.dw-coverage .dw-coverage-action p { flex: 1 1 260px; margin: 0; }
+.dw-coverage-action strong { color: var(--dw-ink); font-weight: 600; }
+.dw-coverage-action .dw-copy-fallback { flex-basis: 100%; padding: 8px 10px; border: 1px solid var(--dw-line); border-radius: 8px; font: 12px/1.5 var(--dw-font-mono); }
+
+/* Agent marks in the Settings picker: muted until chosen; Claude keeps its own colour. */
+.dw-workbench .dw-agent-choice { gap: 7px; padding: 0 14px 0 11px; }
+.dw-agent-icon { flex-shrink: 0; opacity: .7; }
+.dw-agent-choice[data-state=on] .dw-agent-icon, .dw-agent-choice:hover .dw-agent-icon { opacity: 1; }
+.dw-agent-choice[data-state=on] .dw-agent-icon-claude { color: #D97757; }
+
+/* A tile zoomed to its component shows the preview's own white page around it, not the tile's grey. */
+.dw-tile-thumbnail[data-fitted] { background: white; }
+
+/* Settings: a second choice beside the agent, between pasting prompts and connecting over MCP. */
+.dw-connect-picker { display: inline-flex; padding: 2px; border-radius: 9px; background: #f1f1ee; }
+.dw-workbench .dw-connect-choice { gap: 6px; min-height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; color: var(--dw-muted); font-size: 12px; font-weight: 500; }
+.dw-workbench .dw-connect-choice:hover { background: transparent; color: var(--dw-ink); }
+.dw-workbench .dw-connect-choice[data-state=on] { background: white; color: var(--dw-ink); box-shadow: 0 1px 2px #00000018; }
+.dw-mcp-dot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: #c9c9c3; }
+.dw-mcp-dot[data-connected] { background: #3f9463; }
+.dw-setup-card .dw-mcp-how { margin: 12px 0 0; }
+.dw-setup-card pre.dw-mcp-code { max-height: 240px; margin: 6px 0 0; overflow: auto; font-size: 12px; line-height: 1.6; }
+.dw-setup-card .dw-mcp-status { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 6px; }
+.dw-mcp-status .dw-mcp-dot { transform: translateY(-1px); }
+.dw-mcp-status strong { color: var(--dw-ink); font-weight: 600; }
+.dw-ask-card { padding-bottom: 12px; }
+.dw-setup-card .dw-ask-list { display: grid; gap: 6px; margin: 10px 0 12px; padding: 0; list-style: none; }
+.dw-ask-list li { width: fit-content; max-width: 100%; padding: 6px 12px; border-radius: 14px 14px 14px 4px; background: #f5f5f2; color: var(--dw-ink); font-size: 13px; line-height: 1.45; }
+.dw-ask-card code { font-size: 11.5px; overflow-wrap: anywhere; }

@@ -3,21 +3,23 @@ import { resolveWorkbenchPage, type WorkbenchPage } from './navigation.ts';
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from './ui/breadcrumb.tsx';
 import { Kbd, KbdGroup } from './ui/kbd.tsx';
 import { DesignBenchMark } from './brand.tsx';
-import { PanelLeft, ArrowUpRight, RotateCcw, Link2, ChevronRight, BookOpen, LayoutGrid } from 'lucide-react';
+import { PanelLeft, ArrowUpRight, RotateCcw, Link2, ChevronRight, LayoutGrid, Search, Settings as SettingsIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip.tsx';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { defaultControls, type WorkbenchControls } from './controls.tsx';
 import { NavigationPreview as DefaultNavigationPreview } from './navigation-preview.tsx';
 import { InspectorViewToggle, PreviewInspector, useInspectorView } from './preview-inspector.tsx';
 import { CodePanel, type SourceAccess } from './code-panel.tsx';
-import { VariantGuide } from './variant-guide.tsx';
-import { SetupGuide } from './setup-guide.tsx';
+import { DesignPicker, VariantsPanel, type VariantActions } from './variant-guide.tsx';
+import { PreviewThumbnail } from './thumbnail.tsx';
+import { CopyButton, SetupGuide } from './setup-guide.tsx';
+import { populatePrompt } from './agent-prompts.ts';
+import type { AgentConnection, WorkbenchView } from './agent-view.ts';
 import { ContextPanel } from './contexts.tsx';
-import { designsFor, previewUrl, resolveSelection, safeReferenceUrl } from './model.ts';
+import { designsFor, isDraft, previewUrl, resolveSelection, safeReferenceUrl } from './model.ts';
 import type {
   CoverageItem,
   DesignIdea,
-  DesignReference,
   Selection,
   WorkbenchEntry,
 } from './model.ts';
@@ -39,25 +41,15 @@ export interface WorkbenchProps {
   needsInit?: boolean;
   /** Lets the Code tab show file contents and open files in an editor. The CLI supplies this. */
   sourceAccess?: SourceAccess;
-}
-/** A live, non-interactive miniature of an entry's default preview. */
-function TileThumbnail({ title, url, width }: { title: string; url: string; width: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [box, setBox] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    const observer = new ResizeObserver(([item]) => setBox(item.contentRect.width));
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-  const naturalWidth = Number.isFinite(width) ? Math.max(400, Math.min(width + 64, 1200)) : 640;
-  const scale = box / naturalWidth;
-  return <div ref={ref} className="dw-tile-thumbnail" aria-hidden="true" inert>
-    {box > 0 && <iframe title={`${title} thumbnail`} src={url} tabIndex={-1} scrolling="no" loading="lazy" allow="camera 'none'; microphone 'none'" onLoad={() => setLoaded(true)}
-      style={{ width: naturalWidth, height: 150 / scale, transform: `scale(${scale})`, opacity: loaded ? 1 : 0 }} />}
-  </div>;
+  /** Lets the Variants tab switch the app to a saved variant with a button. The CLI supplies this. */
+  variantActions?: VariantActions;
+  /** Called when the page, component, variant, state, or properties on screen change. */
+  onViewChange?: (view: WorkbenchView) => void;
+  /**
+   * Set when agents can connect to this workbench over MCP, which the CLI supports: the agent that last called in,
+   * or null before any has. Leave undefined where there is no MCP server, and Settings offers prompts only.
+   */
+  agentConnection?: AgentConnection | null;
 }
 export function Workbench({
   project,
@@ -71,6 +63,9 @@ export function Workbench({
   setupCommand,
   needsInit = false,
   sourceAccess,
+  variantActions,
+  onViewChange,
+  agentConnection,
 }: WorkbenchProps) {
   const { Button, Input } = controls;
   const NavigationPreview = controls.NavigationPreview ?? DefaultNavigationPreview;
@@ -175,6 +170,12 @@ export function Workbench({
   const showingSetup = page === 'setup' || !entry || needsInit;
   const showingOverview = page === 'overview' && !showingSetup;
   const showingComponent = !showingSetup && !showingOverview && !showCoverage;
+  const viewPage = showingSetup ? 'settings' : showingOverview ? 'overview' : showCoverage ? 'coverage' : 'component';
+  const reportView = useRef(onViewChange);
+  reportView.current = onViewChange;
+  useEffect(() => { if (ready) reportView.current?.({ page: viewPage, selection, comparing: compare }); }, [ready, viewPage, selection, compare]);
+  // A configured project reaches setup commands from Settings; a new one is still setting up.
+  const setupTitle = needsInit || !entries.length ? 'Setup' : 'Settings';
   const designs = entry ? designsFor(entry) : [];
   const design = designs.find((item) => item.id === selection.design) ?? designs[0];
   const update = (patch: Partial<Selection>, replace = false) => {
@@ -200,6 +201,8 @@ export function Workbench({
       .toLowerCase()
       .includes(query.toLowerCase()),
   );
+  // Thumbnails follow the current state and properties, so variants compare with the same content.
+  const thumbnailUrl = (id: string) => entry ? previewUrl(basePath, entry, selection, id) : '';
   const unpreviewed = coverage.filter((item) => item.status !== 'previewed');
   const frame = (idea: DesignIdea) => entry && (
     <section className="dw-preview-card" key={idea.id}>
@@ -234,10 +237,12 @@ export function Workbench({
             ref={searchRef}
             aria-label="Search components"
             aria-keyshortcuts="Meta+K Control+K"
-            placeholder="Find a component…"
+            placeholder="Search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
           />
+          {/* Centred like a native search field until focused or filled. */}
+          <span className="dw-search-hint" aria-hidden="true"><Search size={14} /><span>Search</span></span>
           <KbdGroup className="dw-search-shortcut" aria-hidden="true"><Kbd>{shortcutModifier}</Kbd><Kbd>K</Kbd></KbdGroup>
         </label>
         <nav aria-label="Components" className="dw-nav">
@@ -275,7 +280,7 @@ export function Workbench({
                       setShowNav(false);
                     }}
                   >
-                    {item.name}
+                    <span className="dw-nav-name">{item.name}</span>{isDraft(item) && <span className="dw-nav-draft" title="Generated preview that still needs sample content and states">Draft</span>}
                   </a>
                   </NavigationPreview>
                 ))}
@@ -284,7 +289,7 @@ export function Workbench({
           })}
           {!filtered.length && <p className="dw-empty">{entries.length ? 'No matching components.' : 'No components yet.'}</p>}
         </nav>
-        {!!coverage.length && <Button variant="ghost" className="dw-coverage-button" onClick={() => { setPage('components'); setShowCoverage(value => !value); setShowNav(false); }}>
+        {!!unpreviewed.length && <Button variant="ghost" className="dw-coverage-button" onClick={() => { setPage('components'); setShowCoverage(value => !value); setShowNav(false); }}>
           Coverage & gaps <span>{unpreviewed.length}</span>
         </Button>}
         <a className="dw-setup-link" href={`${basePath}?${new URLSearchParams({ ...selection, view: 'setup' })}`} aria-current={showingSetup ? 'page' : undefined}
@@ -292,8 +297,7 @@ export function Workbench({
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
             event.preventDefault(); setPage('setup'); setShowCoverage(false); setShowNav(false);
             window.history.pushState(null, '', `${basePath}?${new URLSearchParams({ ...selection, view: 'setup' })}`);
-          }}><BookOpen size={16} aria-hidden="true" />Setup</a>
-        <div className="dw-sidebar-footer">Local preview · source edits refresh live</div>
+          }}><SettingsIcon size={16} aria-hidden="true" />Settings</a>
         {!mobile && <div
           className="dw-sidebar-resizer" role="separator" tabIndex={0}
           aria-label="Resize component sidebar" aria-orientation="vertical"
@@ -335,7 +339,7 @@ export function Workbench({
             </Button>
             <Breadcrumb className="dw-breadcrumb" aria-label="Breadcrumb"><BreadcrumbList>
               <BreadcrumbItem>{showingOverview ? <BreadcrumbPage>Components</BreadcrumbPage> : <BreadcrumbLink href={basePath} onClick={navigateOverview}>Components</BreadcrumbLink>}</BreadcrumbItem>
-              {!showingOverview && <><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbPage>{showingSetup ? 'Setup' : showCoverage ? 'Coverage & gaps' : entry?.name}</BreadcrumbPage></BreadcrumbItem></>}
+              {!showingOverview && <><BreadcrumbSeparator /><BreadcrumbItem><BreadcrumbPage>{showingSetup ? setupTitle : showCoverage ? 'Coverage & gaps' : entry?.name}</BreadcrumbPage></BreadcrumbItem></>}
             </BreadcrumbList></Breadcrumb>
           </div>
           {showingComponent && entry && <div className="dw-topbar-actions">
@@ -361,12 +365,13 @@ export function Workbench({
           </div>}
         </header>
         <div className="dw-header">
-          <h1>{showingSetup ? 'Setup' : showingOverview ? 'Components' : showCoverage ? 'Coverage & gaps' : entry?.name}</h1>
+          <h1>{showingSetup ? setupTitle : showingOverview ? 'Components' : showCoverage ? 'Coverage & gaps' : entry?.name}</h1>
           {showingComponent && <p>{entry?.description}</p>}
           {showingOverview && <p>Browse your components and explore their designs.</p>}
         </div>
         {showingComponent && copyError && <p role="status" className="dw-copy-error">{copyError}</p>}
-        {showingSetup ? <SetupGuide embedded needsInit={needsInit} empty={!entries.length} command={setupCommand} /> : showingOverview ? (
+        {showingSetup ? <SetupGuide embedded needsInit={needsInit} empty={!entries.length} command={setupCommand} coverage={coverage} drafts={entries.filter(isDraft).length} connection={agentConnection}
+          onShowCoverage={entry ? () => { setPage('components'); setShowCoverage(true); } : undefined} /> : showingOverview ? (
           <section className="dw-component-overview" aria-label="Component overview">
             {groups.map(group => {
               const items = filtered.filter(item => item.group === group);
@@ -377,7 +382,7 @@ export function Workbench({
                     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
                     event.preventDefault(); update({ component: item.id, design: '', state: '' }); setShowNav(false);
                   }}>
-                    <TileThumbnail title={item.name} width={item.width}
+                    <PreviewThumbnail title={item.name} width={item.width} fit="auto"
                       url={previewUrl(basePath, item, resolveSelection(entries, new URLSearchParams({ component: item.id })))} />
                     <div className="dw-component-tile-title"><strong>{item.name}</strong><ArrowUpRight size={16} aria-hidden="true" /></div>
                     <p>{item.description}</p><code>{item.source}</code>
@@ -388,7 +393,10 @@ export function Workbench({
           </section>
         ) : entry && (showCoverage ? (
           <section className="dw-coverage">
-            <h2>Coverage & gaps</h2>
+            {coverage.some(item => item.status === 'missing') && <div className="dw-coverage-action">
+              <p><strong>Hand the gaps to your agent.</strong> The prompt finds each component below and builds a finished preview for it.</p>
+              <CopyButton text={populatePrompt(setupCommand ?? 'npx designbench')} label="Copy prompt" primary />
+            </div>}
             <p>
               {coverage.filter((item) => item.status === 'previewed').length} of {coverage.length}{' '}
               inventoried source files have a preview. This counts files, not every exported
@@ -411,38 +419,20 @@ export function Workbench({
             onViewportChange={viewport => update({ viewport })} onReset={() => setReset(value => value + 1)}
             onStateChange={state => update({ state })} onPropsChange={props => update({ props: JSON.stringify(props) }, true)}
             toolbar={designs.length > 1 ? (
-              <div className="dw-design-list" role="group" aria-label="Design variants">
-                {designs.map((idea) => (
-                  <Button
-                    key={idea.id}
-                    variant="ghost"
-                    className="dw-design-choice"
-                    title={idea.description}
-                    aria-pressed={!compare && idea.id === design.id}
-                    onClick={() => { setCompare(false); update({ design: idea.id }); }}
-                  >
-                    {idea.name}
-                  </Button>
-                ))}
-                <Button variant="ghost" className="dw-design-choice" aria-pressed={compare} onClick={() => setCompare(value => !value)}>Compare all</Button>
-              </div>
+              <DesignPicker entry={entry} designs={designs} active={design} compare={compare} thumbnailUrl={thumbnailUrl}
+                onSelect={id => { setCompare(false); update({ design: id }); }} onCompare={() => setCompare(true)} />
             ) : (
               <div className="dw-preview-caption" title={design.description}><span>{design.name}</span><Status idea={design} /></div>
             )}
             panels={[
-              { id: 'code', label: 'Code', content: <CodePanel key={entry.id} entry={entry} designs={designs} active={design} compare={compare}
-                access={sourceAccess} onSelect={id => { setCompare(false); update({ design: id }); }} /> },
-              { id: 'variants', label: 'Variants', content: <VariantGuide key={entry.id} entry={entry} design={design} command={setupCommand} /> },
-              { id: 'feedback', label: 'Feedback', content: <div className="dw-feedback-panel">
-                <ReferencePanel
-                  key={`${entry.id}/${design.id}`}
-                  controls={controls}
-                  designName={designs.length > 1 ? design.name : undefined}
-                  storageKey={`design-workbench:${projectId}:${entry.id}:${design.id}`}
-                  references={design.references ?? []}
-                />
+              { id: 'code', label: 'Code', content: <div className="dw-panel-stack">
+                <CodePanel key={entry.id} entry={entry} designs={designs} active={design} compare={compare}
+                  access={sourceAccess} onSelect={id => { setCompare(false); update({ design: id }); }} />
+                {!!design.references?.length && <References design={design} />}
                 <ContextPanel key={`contexts:${entry.id}`} entry={entry} entries={entries} basePath={basePath} controls={controls} navigate={update} />
               </div> },
+              { id: 'variants', label: 'Variants', content: <VariantsPanel key={entry.id} entry={entry} designs={designs} active={design} compare={compare}
+                command={setupCommand} actions={variantActions} thumbnailUrl={thumbnailUrl} onSelect={id => { setCompare(false); update({ design: id }); }} /> },
             ]}>
             <div className={`dw-previews ${compare ? 'dw-compare' : ''}`}>
               {ready ? (
@@ -474,144 +464,17 @@ function Status({ idea }: { idea: DesignIdea }) {
     </span>
   );
 }
-function ReferencePanel({
-  controls,
-  designName,
-  storageKey,
-  references,
-}: {
-  controls: WorkbenchControls;
-  designName?: string;
-  storageKey: string;
-  references: DesignReference[];
-}) {
-  const { Button, Input, Textarea } = controls;
-  const [saved, setSaved] = useState<DesignReference[]>([]);
-  const [error, setError] = useState('');
-  const formRef = useRef<HTMLFormElement>(null);
-  useEffect(() => {
-    try {
-      const parsed: unknown = JSON.parse(localStorage.getItem(storageKey) ?? '[]');
-      if (Array.isArray(parsed))
-        setSaved(
-          parsed.filter(
-            (item): item is DesignReference =>
-              item &&
-              typeof item.title === 'string' &&
-              (!item.url || typeof item.url === 'string') &&
-              (!item.notes || typeof item.notes === 'string'),
-          ),
-        );
-    } catch {
-      /* Storage can be unavailable in embedded previews. */
-    }
-  }, [storageKey]);
-  const persist = (next: DesignReference[]) => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      setSaved(next);
-      setError('');
-    } catch {
-      setError('Browser storage is unavailable. Copy your reference into the project manifest.');
-    }
-  };
-  return (
-    <div className="dw-references">
-      <div className="dw-section-label">References & feedback{designName && <span>for {designName}</span>}</div>
-      <p className="dw-note">
-        Attach a reference link or describe a direction for this idea. Browser notes stay on this
-        machine; export them to share with your agent.
-      </p>
-      <ul>
-        {[...references, ...saved].map((reference, i) => (
-          <li key={i}>
-            {reference.url && safeReferenceUrl(reference.url) ? (
-              <a href={safeReferenceUrl(reference.url)} target="_blank" rel="noreferrer">
-                {reference.title} ↗
-              </a>
-            ) : (
-              <strong>{reference.title}</strong>
-            )}
-            {reference.notes && <p>{reference.notes}</p>}
-            {i >= references.length && (
-              <Button
-                aria-label={`Remove ${reference.title}`}
-                onClick={() => persist(saved.filter((_, index) => index !== i - references.length))}
-              >
-                Remove
-              </Button>
-            )}
-          </li>
-        ))}
-      </ul>
-      <form
-        ref={formRef}
-        onSubmit={(event) => {
-          event.preventDefault();
-          const data = new FormData(event.currentTarget);
-          const url = String(data.get('url') ?? '').trim();
-          if (url && !safeReferenceUrl(url)) {
-            setError('Use an http or https reference URL.');
-            return;
-          }
-          persist([
-            ...saved,
-            {
-              title: String(data.get('title')).trim(),
-              url: url || undefined,
-              notes: String(data.get('notes') ?? '').trim() || undefined,
-            },
-          ]);
-          formRef.current?.reset();
-        }}
-      >
-        <label>
-          Reference name
-          <Input name="title" required maxLength={120} placeholder="e.g. A quieter meal receipt" />
-        </label>
-        <label>
-          Reference URL (optional)
-          <Input name="url" placeholder="https://…" />
-        </label>
-        <label>
-          Design feedback
-          <Textarea
-            name="notes"
-            rows={2}
-            maxLength={5000}
-            placeholder="What should we borrow or change?"
-          />
-        </label>
-        <div>
-          <Button type="submit" variant="default">Save reference</Button>
-          <Button
-            type="button"
-            onClick={() => {
-              const blob = new Blob(
-                [
-                  JSON.stringify(
-                    { design: storageKey, references: [...references, ...saved] },
-                    null,
-                    2,
-                  ),
-                ],
-                { type: 'application/json' },
-              );
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = 'design-references.json';
-              link.click();
-              setTimeout(() => URL.revokeObjectURL(url), 1000);
-            }}
-          >
-            Export references
-          </Button>
-        </div>
-        {error && <p role="alert">{error}</p>}
-      </form>
-    </div>
-  );
+/** References supplied by the catalog (for example from PatternGarden). Browser notes are not collected. */
+function References({ design }: { design: DesignIdea }) {
+  return <section className="dw-references" aria-label="References">
+    <h2>References</h2>
+    <ul>{design.references!.map((reference, index) => <li key={index}>
+      {reference.url && safeReferenceUrl(reference.url)
+        ? <a href={safeReferenceUrl(reference.url)} target="_blank" rel="noreferrer">{reference.title} ↗</a>
+        : <strong>{reference.title}</strong>}
+      {reference.notes && <p>{reference.notes}</p>}
+    </li>)}</ul>
+  </section>;
 }
 
 function WorkbenchIcon({ name }: { name: 'panels' | 'external' | 'reset' | 'link' }) {

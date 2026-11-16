@@ -93,7 +93,7 @@ export async function promoteVariant(root, { component, variant, apply = false }
   const current = await fs.readFile(target, 'utf8');
   const variantSource = await safePath(root, path.relative(root, path.join(directory, 'component' + path.extname(target))));
   const proposed = rebaseImports(await fs.readFile(variantSource, 'utf8'), variantSource, target, root);
-  if (hash(current) !== manifest.baseHash) throw new Error('Application source changed since this variant was created. Reconcile it manually before promoting.');
+  if (hash(current) !== manifest.baseHash) throw Object.assign(new Error('Application source changed since this variant was created. Reconcile it manually before promoting.'), { code: 'SOURCE_CHANGED', target: manifest.source });
   if (current === proposed) return { status: 'unchanged', target: manifest.source };
   if (!componentExports(proposed, manifest.source).some(item => item.exportName === manifest.exportName)) throw new Error('Variant no longer exports the original component. Restore its public export before promotion.');
   if (!apply) {

@@ -1,0 +1,369 @@
+{
+  "schemaVersion": 1,
+  "project": "designbench",
+  "sources": [
+    "src"
+  ],
+  "frameworks": [
+    "vite"
+  ],
+  "components": [
+    {
+      "id": "src/agent-icons.tsx#AgentIcon",
+      "file": "src/agent-icons.tsx",
+      "exportName": "AgentIcon",
+      "name": "AgentIcon",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/brand.tsx#DesignBenchMark",
+      "file": "src/brand.tsx",
+      "exportName": "DesignBenchMark",
+      "name": "DesignBenchMark",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/code-panel.tsx#CodePanel",
+      "file": "src/code-panel.tsx",
+      "exportName": "CodePanel",
+      "name": "CodePanel",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/contexts.tsx#ContextPanel",
+      "file": "src/contexts.tsx",
+      "exportName": "ContextPanel",
+      "name": "ContextPanel",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/file-icon.tsx#FileTypeIcon",
+      "file": "src/file-icon.tsx",
+      "exportName": "FileTypeIcon",
+      "name": "FileTypeIcon",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/navigation-preview.tsx#NavigationPreview",
+      "file": "src/navigation-preview.tsx",
+      "exportName": "NavigationPreview",
+      "name": "NavigationPreview",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/preview-inspector.tsx#InspectorViewToggle",
+      "file": "src/preview-inspector.tsx",
+      "exportName": "InspectorViewToggle",
+      "name": "InspectorViewToggle",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/preview-inspector.tsx#PreviewInspector",
+      "file": "src/preview-inspector.tsx",
+      "exportName": "PreviewInspector",
+      "name": "PreviewInspector",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/properties.tsx#Properties",
+      "file": "src/properties.tsx",
+      "exportName": "Properties",
+      "name": "Properties",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/setup-guide.tsx#CopyButton",
+      "file": "src/setup-guide.tsx",
+      "exportName": "CopyButton",
+      "name": "CopyButton",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/setup-guide.tsx#SetupGuide",
+      "file": "src/setup-guide.tsx",
+      "exportName": "SetupGuide",
+      "name": "SetupGuide",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/thumbnail.tsx#PreviewThumbnail",
+      "file": "src/thumbnail.tsx",
+      "exportName": "PreviewThumbnail",
+      "name": "PreviewThumbnail",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/breadcrumb.tsx#Breadcrumb",
+      "file": "src/ui/breadcrumb.tsx",
+      "exportName": "Breadcrumb",
+      "name": "Breadcrumb",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/breadcrumb.tsx#BreadcrumbList",
+      "file": "src/ui/breadcrumb.tsx",
+      "exportName": "BreadcrumbList",
+      "name": "BreadcrumbList",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/breadcrumb.tsx#BreadcrumbItem",
+      "file": "src/ui/breadcrumb.tsx",
+      "exportName": "BreadcrumbItem",
+      "name": "BreadcrumbItem",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/breadcrumb.tsx#BreadcrumbLink",
+      "file": "src/ui/breadcrumb.tsx",
+      "exportName": "BreadcrumbLink",
+      "name": "BreadcrumbLink",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/breadcrumb.tsx#BreadcrumbPage",
+      "file": "src/ui/breadcrumb.tsx",
+      "exportName": "BreadcrumbPage",
+      "name": "BreadcrumbPage",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/breadcrumb.tsx#BreadcrumbSeparator",
+      "file": "src/ui/breadcrumb.tsx",
+      "exportName": "BreadcrumbSeparator",
+      "name": "BreadcrumbSeparator",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/breadcrumb.tsx#BreadcrumbEllipsis",
+      "file": "src/ui/breadcrumb.tsx",
+      "exportName": "BreadcrumbEllipsis",
+      "name": "BreadcrumbEllipsis",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/button.tsx#Button",
+      "file": "src/ui/button.tsx",
+      "exportName": "Button",
+      "name": "Button",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/checkbox.tsx#Checkbox",
+      "file": "src/ui/checkbox.tsx",
+      "exportName": "Checkbox",
+      "name": "Checkbox",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/dropdown-menu.tsx#DropdownMenuContent",
+      "file": "src/ui/dropdown-menu.tsx",
+      "exportName": "DropdownMenuContent",
+      "name": "DropdownMenuContent",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/dropdown-menu.tsx#DropdownMenuItem",
+      "file": "src/ui/dropdown-menu.tsx",
+      "exportName": "DropdownMenuItem",
+      "name": "DropdownMenuItem",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/dropdown-menu.tsx#DropdownMenuRadioItem",
+      "file": "src/ui/dropdown-menu.tsx",
+      "exportName": "DropdownMenuRadioItem",
+      "name": "DropdownMenuRadioItem",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/dropdown-menu.tsx#DropdownMenuLabel",
+      "file": "src/ui/dropdown-menu.tsx",
+      "exportName": "DropdownMenuLabel",
+      "name": "DropdownMenuLabel",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/dropdown-menu.tsx#DropdownMenuSeparator",
+      "file": "src/ui/dropdown-menu.tsx",
+      "exportName": "DropdownMenuSeparator",
+      "name": "DropdownMenuSeparator",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/hover-card.tsx#HoverCardContent",
+      "file": "src/ui/hover-card.tsx",
+      "exportName": "HoverCardContent",
+      "name": "HoverCardContent",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/input.tsx#Input",
+      "file": "src/ui/input.tsx",
+      "exportName": "Input",
+      "name": "Input",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/kbd.tsx#Kbd",
+      "file": "src/ui/kbd.tsx",
+      "exportName": "Kbd",
+      "name": "Kbd",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/kbd.tsx#KbdGroup",
+      "file": "src/ui/kbd.tsx",
+      "exportName": "KbdGroup",
+      "name": "KbdGroup",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/resizable.tsx#ResizablePanelGroup",
+      "file": "src/ui/resizable.tsx",
+      "exportName": "ResizablePanelGroup",
+      "name": "ResizablePanelGroup",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/resizable.tsx#ResizableHandle",
+      "file": "src/ui/resizable.tsx",
+      "exportName": "ResizableHandle",
+      "name": "ResizableHandle",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/select.tsx#SelectTrigger",
+      "file": "src/ui/select.tsx",
+      "exportName": "SelectTrigger",
+      "name": "SelectTrigger",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/select.tsx#SelectContent",
+      "file": "src/ui/select.tsx",
+      "exportName": "SelectContent",
+      "name": "SelectContent",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/select.tsx#SelectLabel",
+      "file": "src/ui/select.tsx",
+      "exportName": "SelectLabel",
+      "name": "SelectLabel",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/select.tsx#SelectItem",
+      "file": "src/ui/select.tsx",
+      "exportName": "SelectItem",
+      "name": "SelectItem",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/select.tsx#SelectSeparator",
+      "file": "src/ui/select.tsx",
+      "exportName": "SelectSeparator",
+      "name": "SelectSeparator",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/select.tsx#SelectScrollUpButton",
+      "file": "src/ui/select.tsx",
+      "exportName": "SelectScrollUpButton",
+      "name": "SelectScrollUpButton",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/select.tsx#SelectScrollDownButton",
+      "file": "src/ui/select.tsx",
+      "exportName": "SelectScrollDownButton",
+      "name": "SelectScrollDownButton",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/tabs.tsx#TabsList",
+      "file": "src/ui/tabs.tsx",
+      "exportName": "TabsList",
+      "name": "TabsList",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/tabs.tsx#TabsTrigger",
+      "file": "src/ui/tabs.tsx",
+      "exportName": "TabsTrigger",
+      "name": "TabsTrigger",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/tabs.tsx#TabsContent",
+      "file": "src/ui/tabs.tsx",
+      "exportName": "TabsContent",
+      "name": "TabsContent",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/textarea.tsx#Textarea",
+      "file": "src/ui/textarea.tsx",
+      "exportName": "Textarea",
+      "name": "Textarea",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/toggle-group.tsx#ToggleGroup",
+      "file": "src/ui/toggle-group.tsx",
+      "exportName": "ToggleGroup",
+      "name": "ToggleGroup",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/toggle-group.tsx#ToggleGroupItem",
+      "file": "src/ui/toggle-group.tsx",
+      "exportName": "ToggleGroupItem",
+      "name": "ToggleGroupItem",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/ui/tooltip.tsx#TooltipContent",
+      "file": "src/ui/tooltip.tsx",
+      "exportName": "TooltipContent",
+      "name": "TooltipContent",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/variant-guide.tsx#DesignPicker",
+      "file": "src/variant-guide.tsx",
+      "exportName": "DesignPicker",
+      "name": "DesignPicker",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/variant-guide.tsx#VariantsPanel",
+      "file": "src/variant-guide.tsx",
+      "exportName": "VariantsPanel",
+      "name": "VariantsPanel",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/variant-guide.tsx#VariantGuide",
+      "file": "src/variant-guide.tsx",
+      "exportName": "VariantGuide",
+      "name": "VariantGuide",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/workbench.tsx#Workbench",
+      "file": "src/workbench.tsx",
+      "exportName": "Workbench",
+      "name": "Workbench",
+      "status": "needs-review"
+    }
+  ],
+  "stories": [],
+  "limitations": [
+    "Candidates are exported PascalCase functions, classes, or memo/forwardRef wrappers; a candidate may not be a React component.",
+    "Barrel re-exports, dynamic exports, custom HOCs, and files outside the source directories are not resolved.",
+    "Required props, providers, styles, server dependencies, and actual production usage require review.",
+    "Discovery does not execute source code, create stories, or claim preview coverage."
+  ]
+}

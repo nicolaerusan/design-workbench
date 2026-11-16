@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ChevronRight, FileCode2, Folder, SquareArrowOutUpRight } from 'lucide-react';
+import { ArrowLeft, ChevronRight, Folder, SquareArrowOutUpRight } from 'lucide-react';
 import { Button } from './ui/button.tsx';
+import { FileTypeIcon } from './file-icon.tsx';
 import { designFiles, type DesignIdea, type SourceFile, type WorkbenchEntry } from './model.ts';
 
 /** Optional file access supplied by the dev server. Without it, the Code tab lists paths only. */
@@ -44,7 +45,7 @@ export function CodePanel({ entry, designs, active, compare, access, onSelect }:
   return <div className="dw-code" ref={tree}>
     <h2>Files</h2>
     <p>{designs.length > 1
-      ? 'The source component is your app’s own code. Each variant is a separate copy saved in .design-workbench/ideas, so your app stays unchanged until you promote one.'
+      ? 'The source component is your app’s own code. Each variant is a separate copy saved in .design-workbench/ideas, so your app stays unchanged until you switch it to one.'
       : 'The code behind this preview. Your app stays unchanged; DesignBench only reads it.'}</p>
     <ul className="dw-tree">
       {designs.map(design => {
@@ -67,7 +68,7 @@ export function CodePanel({ entry, designs, active, compare, access, onSelect }:
               <ul className="dw-tree-children">
                 {files.map(item => <li key={item.path}>
                   <button type="button" className="dw-tree-file" data-path={item.path} title={item.path} onClick={() => { setFile(item); }}>
-                    <FileCode2 size={14} aria-hidden="true" /><span className="dw-tree-name">{basename(item.path)}</span><span className="dw-tree-role">{item.label}</span>
+                    <FileTypeIcon path={item.path} /><span className="dw-tree-name">{basename(item.path)}</span><span className="dw-tree-role">{item.label}</span>
                   </button>
                 </li>)}
               </ul>

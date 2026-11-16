@@ -37,7 +37,9 @@ test('empty catalog explains setup and the preview controls explain their meanin
   assert.match(html, /State preset/);
   assert.match(html, /Resize inspector panel/);
   assert.match(html, /aria-label="Inspector layout"/);
-  assert.match(html, /role="tab"[^>]*>Feedback</);
+  assert.doesNotMatch(html, /role="tab"[^>]*>Feedback</);
+  assert.doesNotMatch(html, /Local preview · source edits refresh live/);
+  assert.match(html, />Settings</);
   assert.match(html, /role="tab"[^>]*>Variants</);
   assert.match(html, /target="_blank"/);
 });
@@ -92,8 +94,115 @@ test('the Code tab lists the files behind the source component and each saved va
   assert.deepEqual(designFiles(fixtureEntry, source).map(file => file.path), ['Button.tsx', '.design-workbench/previews/button.tsx']);
   assert.deepEqual(designFiles(fixtureEntry, ink).map(file => file.path), ['component.tsx', 'index.tsx', 'variant.json'].map(name => `.design-workbench/ideas/button/ink/${name}`));
   assert.deepEqual(designFiles(fixtureEntry, { ...ink, files: [{ path: 'custom.tsx', label: 'Custom' }] }).map(file => file.path), ['custom.tsx']);
+  assert.deepEqual(designFiles({ ...entry, source: 'welcome.tsx', fixture: 'welcome.tsx' }, { id: 'solid', name: 'Solid', source: 'welcome.tsx' }).map(file => file.path), ['welcome.tsx']);
   const html = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[{ ...fixtureEntry, designs:[source, ink] }], initialSelection:{ component:'button', design:'ink', state:'Default', viewport:'fit' } }));
   assert.match(html, /role="tab"[^>]*>Code</);
   assert.match(html, /\.design-workbench\/ideas\/button\/ink\/variant\.json/);
   assert.match(html, /aria-label="View options\. Viewport: Fit panel"/);
+  assert.match(html, /aria-label="Variant: Ink"/);
+  assert.match(html, /Use Ink in your app/);
+  assert.doesNotMatch(html, /Read \.design-workbench\/AGENT\.md/);
+  // Files show their type; .tsx files get the React mark and JSON gets braces.
+  assert.match(html, /dw-file-icon-react/);
+  assert.match(html, /dw-file-icon-json/);
+  // The source is its own button, separate from the variant menu.
+  assert.match(html, /<button[^>]*class="dw-design-choice dw-design-source"[^>]*aria-pressed="false"[^>]*>.*?Source component<\/button>/);
+  // Without dev-server actions the tab shows the terminal command; with them, one button.
+  assert.match(html, /variant promote button ink/);
+  const withActions = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[{ ...fixtureEntry, designs:[source, ink] }], initialSelection:{ component:'button', design:'ink', state:'Default', viewport:'fit' }, variantActions:{ promote: async () => ({ status:'applied', target:'Button.tsx' }) } }));
+  assert.match(withActions, />Use Ink in my app</);
+  assert.doesNotMatch(withActions, /variant promote button ink/);
+});
+
+test('Settings hands the work to a coding agent: agent choice, populate prompt, coverage, and drafts', async () => {
+  const { populatePrompt, refreshPrompt, memoryLine, agents, isDraft } = await import('../dist/index.js');
+  assert.deepEqual(agents.map(agent => agent.label), ['Claude', 'ChatGPT', 'Cursor', 'Other agents']);
+  assert.match(populatePrompt('npx designbench'), /npx designbench scan --write[\s\S]*npx designbench add --all[\s\S]*Do not change application source files/);
+  assert.doesNotMatch(populatePrompt('npx designbench'), /designbench init/);
+  assert.match(populatePrompt('npx designbench', true), /Run `npx designbench init`/);
+  assert.match(refreshPrompt('node cli.mjs'), /node cli\.mjs scan --write/);
+  // A long command is stated once instead of being repeated in every step.
+  const long = "node '/Users/someone/Projects/app/.worktrees/feature/cli/index.mjs' --cwd '/Users/someone/Projects/app'";
+  assert.equal(populatePrompt(long).split(long).length - 1, 1);
+  assert.match(populatePrompt(long), /written as `designbench` below[\s\S]*Run `designbench scan --write`/);
+  assert.equal(refreshPrompt(long).split(long).length - 1, 1);
+  assert.match(memoryLine('npx designbench'), /\.design-workbench\/AGENT\.md/);
+  const draft = { ...entry, id: 'card', name: 'Card', source: 'Card.tsx', description: 'Draft fixture: review props, providers, and states.', draft: true };
+  assert.equal(isDraft(draft), true);
+  assert.equal(isDraft({ ...draft, draft: undefined }), true, 'older generated fixtures are recognised by their placeholder description');
+  assert.equal(isDraft({ ...draft, draft: false }), false);
+  assert.equal(isDraft(entry), false);
+  const coverage = [{ source: 'Button.tsx', status: 'previewed' }, { source: 'Card.tsx', status: 'previewed' }, { source: 'Dialog.tsx', status: 'missing' }];
+  const html = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[entry, draft], coverage, initialSelection:{ component:'button', design:'current', state:'Default', viewport:'fit', view:'setup' } }));
+  assert.match(html, /Use DesignBench with your agent/);
+  assert.match(html, /aria-label="Your agent"/);
+  // Each choice carries its agent's mark.
+  for (const label of ['Claude', 'ChatGPT', 'Cursor', 'Other agents']) assert.match(html, new RegExp(`dw-agent-choice[^>]*><svg[^>]*dw-agent-icon.*?</svg>${label}<`));
+  assert.match(html, /Populate the workbench/);
+  assert.match(html, /Keep it up to date/);
+  assert.match(html, /<strong>2 of 3<\/strong> component files have a preview, <strong>1<\/strong> to go\./);
+  assert.match(html, /1 preview is still a draft\./);
+  assert.match(html, /CLAUDE\.md/);
+  // The sidebar marks the unfinished preview and links to the gaps.
+  assert.match(html, /dw-nav-draft[^>]*>Draft</);
+  assert.match(html, /Coverage &amp; gaps/);
+  const complete = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[entry], coverage: coverage.slice(0, 2), initialSelection:{ component:'button', design:'current', state:'Default', viewport:'fit', view:'setup' } }));
+  assert.match(complete, /All <strong>2<\/strong> component files have a preview\./);
+  assert.doesNotMatch(complete, /Coverage &amp; gaps|dw-nav-draft/);
+  const fresh = renderToStaticMarkup(createElement(Workbench, { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[], needsInit:true }));
+  assert.match(fresh, /Set up and populate the workbench/);
+});
+
+test('Settings offers an MCP connection where the workbench supports one, with setup for each agent', async () => {
+  const { mcpSetup, variantsPrompt, SetupGuide, describeView, describeCatalog } = await import('../dist/index.js');
+  assert.deepEqual(mcpSetup('claude', 'npx designbench'), { kind: 'command', text: 'claude mcp add designbench -- npx designbench mcp', how: 'Run this once in your project folder.', then: 'Then start a new Claude Code session in this project.' });
+  assert.equal(mcpSetup('chatgpt', 'npx --no-install designbench').text, 'codex mcp add designbench -- npx --no-install designbench mcp');
+  // Cursor may start servers outside the project, so an installed copy is addressed through the workspace folder.
+  assert.deepEqual(JSON.parse(mcpSetup('cursor', 'npx --no-install designbench').text), { mcpServers: { designbench: { command: 'node', args: ['${workspaceFolder}/node_modules/designbench/cli/index.mjs', '--cwd', '${workspaceFolder}', 'mcp'] } } });
+  // A checkout command keeps its quoted paths as single arguments.
+  const checkout = "node '/Users/some one/it''s/cli/index.mjs' --cwd '/Users/some one/app'";
+  assert.deepEqual(JSON.parse(mcpSetup('cursor', checkout).text).mcpServers.designbench, { command: 'node', args: ['/Users/some one/its/cli/index.mjs', '--cwd', '/Users/some one/app', 'mcp'] });
+  assert.deepEqual(JSON.parse(mcpSetup('other', 'npx designbench').text).mcpServers.designbench, { command: 'npx', args: ['designbench', 'mcp'] });
+  assert.match(mcpSetup('other', 'npx designbench').text, /"args": \["designbench", "mcp"\]/);
+  assert.match(variantsPrompt('npx designbench', { component: 'Button', count: 4 }), /^Create 4 visual variants of the Button component\.[\s\S]*npx designbench variant create[\s\S]*do not promote a variant until I choose one\.$/);
+
+  const props = { project:'Fixture', projectId:'fixture', basePath:'/design', entries:[entry], initialSelection:{ component:'button', design:'current', state:'Default', viewport:'fit', view:'setup' } };
+  // An embedded workbench has no MCP server, so it offers prompts only.
+  const embedded = renderToStaticMarkup(createElement(Workbench, props));
+  assert.doesNotMatch(embedded, /How your agent works with DesignBench|connect it over MCP/);
+  // The CLI's workbench offers both; prompts stay the default.
+  const waiting = renderToStaticMarkup(createElement(Workbench, { ...props, agentConnection: null }));
+  assert.match(waiting, /aria-label="How your agent works with DesignBench"/);
+  assert.match(waiting, /copy a prompt or connect it over MCP/);
+  assert.match(waiting, /Populate the workbench/);
+  assert.doesNotMatch(waiting, /Connect Claude to this workbench|dw-mcp-dot/);
+  const guide = { embedded: true, empty: false, command: 'npx designbench', coverage: [{ source: 'Button.tsx', status: 'previewed' }, { source: 'Card.tsx', status: 'missing' }], defaultConnect: 'mcp' };
+  const notConnected = renderToStaticMarkup(createElement(SetupGuide, { ...guide, connection: null }));
+  assert.match(notConnected, /Connect Claude to this workbench/);
+  assert.match(notConnected, /claude mcp add designbench -- npx designbench mcp/);
+  assert.match(notConnected, />Copy command</);
+  assert.match(notConnected, /Then start a new Claude Code session in this project\. This line turns green when it connects\./);
+  assert.match(notConnected, /\/mcp__designbench__populate/);
+  assert.match(notConnected, /<strong>1 of 2<\/strong> component files have a preview/);
+  assert.doesNotMatch(notConnected, /Keep it up to date|data-connected/);
+  const connected = renderToStaticMarkup(createElement(SetupGuide, { ...guide, connection: { client: 'Claude Code', at: Date.now() } }));
+  assert.match(connected, /<strong>Claude Code is connected\.<\/strong> It last called at /);
+  assert.match(connected, /dw-mcp-dot" data-connected="true"/);
+  // Without an MCP server the choice is ignored.
+  assert.doesNotMatch(renderToStaticMarkup(createElement(SetupGuide, guide)), /Connect Claude to this workbench/);
+
+  // What the page reports to the dev server for agents: names, ids and files, in the workbench's own words.
+  const ink = { id: 'ink', name: 'Ink', kind: 'exploration', source: '.design-workbench/ideas/button/ink/component.tsx' };
+  const controlled = { ...entry, designs: [{ id: 'current', name: 'Source component', source: 'Button.tsx' }, ink], propControls: { label: { type: 'text', defaultValue: 'Continue' } } };
+  const view = describeView([controlled], { page: 'component', comparing: true, selection: { component: 'button', design: 'ink', state: 'Disabled', viewport: '375', props: '{"label":"Send"}' } }, '/design');
+  assert.deepEqual({ ...view, variant: { ...view.variant, files: view.variant.files.length } }, {
+    page: 'component', component: { id: 'button', name: 'Button', source: 'Button.tsx' }, variant: { id: 'ink', name: 'Ink', kind: 'variant', files: 3 },
+    state: 'Disabled', viewport: '375', comparing: true, properties: { label: 'Send' }, editedProperties: { label: 'Send' },
+    previewPath: '/design/button?design=ink&state=Disabled&props=%7B%22label%22%3A%22Send%22%7D',
+  });
+  assert.deepEqual(describeView([controlled], { page: 'settings', comparing: false, selection: { component: 'button', design: 'current', state: 'Default', viewport: 'fit' } }), { page: 'settings' });
+  const described = describeCatalog('Fixture', [controlled], [{ source: 'Button.tsx', status: 'previewed', reason: 'ignored' }]);
+  assert.deepEqual(described.components[0].states, ['Default', 'Disabled']);
+  assert.deepEqual(described.components[0].variants, [{ id: 'current', name: 'Source component', kind: 'source', source: 'Button.tsx' }, { id: 'ink', name: 'Ink', kind: 'variant', source: ink.source }]);
+  assert.deepEqual(described.coverage, [{ source: 'Button.tsx', status: 'previewed' }]);
 });

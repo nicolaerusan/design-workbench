@@ -45,6 +45,8 @@ export interface WorkbenchEntry {
   width: number;
   /** The file that renders this preview (props, providers, and states), if known. */
   fixture?: string;
+  /** A generated preview nobody has finished yet: no sample props, states, or review. */
+  draft?: boolean;
   designs?: DesignIdea[];
   contexts?: ComponentContext[];
   propControls?: Record<string, PropControl>;
@@ -75,6 +77,10 @@ export interface Selection {
   /** Validated JSON property overrides, shared with preview URLs. */
   props?: string;
 }
+/** Generated previews are drafts until someone finishes them. Older fixtures are recognised by their placeholder description. */
+export function isDraft(entry: WorkbenchEntry): boolean {
+  return entry.draft === true || entry.draft === undefined && entry.description.startsWith('Draft fixture:');
+}
 export function designsFor(entry: WorkbenchEntry): DesignIdea[] {
   return entry.designs?.length
     ? entry.designs
@@ -93,7 +99,8 @@ export function designFiles(entry: WorkbenchEntry, design: DesignIdea): SourceFi
   const files: SourceFile[] = [design.source === entry.source || design.kind !== 'exploration'
     ? { path: design.source, label: 'App component', description: 'Your app’s component. Previews read it directly; DesignBench never edits it.' }
     : { path: design.source, label: 'Exploration', description: 'An alternative registered in your catalog.' }];
-  if (entry.fixture && design.source === entry.source) files.push({ path: entry.fixture, label: 'Preview fixture', description: 'Renders the component for DesignBench with sample props, providers, and states.' });
+  // A fixture can be the source itself (catalog-only examples); list each file once.
+  if (entry.fixture && design.source === entry.source && entry.fixture !== design.source) files.push({ path: entry.fixture, label: 'Preview fixture', description: 'Renders the component for DesignBench with sample props, providers, and states.' });
   return files;
 }
 export function resolveSelection(entries: WorkbenchEntry[], query: URLSearchParams): Selection {

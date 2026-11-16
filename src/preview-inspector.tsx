@@ -92,7 +92,11 @@ export function PreviewInspector({ children, toolbar, panels = [], view: control
   const controlled = controlledView !== undefined;
   const view = controlledView ?? ownView;
   const setView = onViewChange ?? setOwnView;
-  const [tab, setTab] = useState('properties');
+  // The open tab survives the page reloads that source edits trigger (for this browser tab only).
+  const tabKey = `design-workbench:${projectId}:inspector-tab`;
+  const [tab, setTabState] = useState('properties');
+  useEffect(() => { try { const saved = sessionStorage.getItem(tabKey); if (saved) setTabState(saved); } catch {} }, [tabKey]);
+  const setTab = (next: string) => { setTabState(next); try { sessionStorage.setItem(tabKey, next); } catch {} };
   const activeTab = tab === 'properties' || panels.some(item => item.id === tab) ? tab : 'properties';
   const storageKey = `design-workbench:${projectId}:inspector`;
   const [ready, setReady] = useState(false);
