@@ -69,6 +69,19 @@ export interface CoverageItem {
   status: 'previewed' | 'excluded' | 'missing';
   reason?: string;
 }
+/** What the host knows about newer or deprecated releases of DesignBench itself. */
+export interface UpdateInfo {
+  /** The version currently running. */
+  current: string;
+  /** A newer published version. */
+  latest?: string;
+  /** The registry's deprecation message for the running version. */
+  deprecated?: string;
+  /** The command that moves this project to `latest`. Shown for copying, never run. */
+  command?: string;
+  /** Release notes. Only http(s) URLs are linked. */
+  notesUrl?: string;
+}
 export interface Selection {
   component: string;
   design: string;

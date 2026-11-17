@@ -331,6 +331,20 @@
       "status": "needs-review"
     },
     {
+      "id": "src/update-notice.tsx#UpdateNotice",
+      "file": "src/update-notice.tsx",
+      "exportName": "UpdateNotice",
+      "name": "UpdateNotice",
+      "status": "needs-review"
+    },
+    {
+      "id": "src/update-notice.tsx#DeprecationBanner",
+      "file": "src/update-notice.tsx",
+      "exportName": "DeprecationBanner",
+      "name": "DeprecationBanner",
+      "status": "needs-review"
+    },
+    {
       "id": "src/variant-guide.tsx#DesignPicker",
       "file": "src/variant-guide.tsx",
       "exportName": "DesignPicker",

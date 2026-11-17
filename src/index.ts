@@ -9,6 +9,9 @@ export { agents, populatePrompt, refreshPrompt, variantsPrompt, memoryLine, mcpS
 export type { AgentId, McpSetup } from './agent-prompts.ts';
 export { describeView, describeCatalog } from './agent-view.ts';
 export type { WorkbenchView, AgentConnection } from './agent-view.ts';
+export { UpdateNotice, DeprecationBanner } from './update-notice.tsx';
+export { loadPreviews, PreviewLoadError } from './previews.ts';
+export type { PreviewModule, PreviewFailure } from './previews.ts';
 export { withVariants } from './variants.ts';
 export type { SavedVariant } from './variants.ts';
 export type { SourceAccess } from './code-panel.tsx';

@@ -15,12 +15,14 @@ import { PreviewThumbnail } from './thumbnail.tsx';
 import { CopyButton, SetupGuide } from './setup-guide.tsx';
 import { populatePrompt } from './agent-prompts.ts';
 import type { AgentConnection, WorkbenchView } from './agent-view.ts';
+import { DeprecationBanner, UpdateNotice } from './update-notice.tsx';
 import { ContextPanel } from './contexts.tsx';
 import { designsFor, isDraft, previewUrl, resolveSelection, safeReferenceUrl } from './model.ts';
 import type {
   CoverageItem,
   DesignIdea,
   Selection,
+  UpdateInfo,
   WorkbenchEntry,
 } from './model.ts';
 
@@ -50,6 +52,10 @@ export interface WorkbenchProps {
    * or null before any has. Leave undefined where there is no MCP server, and Settings offers prompts only.
    */
   agentConnection?: AgentConnection | null;
+  /** The running DesignBench version, shown in the sidebar footer. */
+  version?: string;
+  /** A newer or deprecated release, when the host has checked for one. */
+  update?: UpdateInfo;
 }
 export function Workbench({
   project,
@@ -66,6 +72,8 @@ export function Workbench({
   variantActions,
   onViewChange,
   agentConnection,
+  version,
+  update: release,
 }: WorkbenchProps) {
   const { Button, Input } = controls;
   const NavigationPreview = controls.NavigationPreview ?? DefaultNavigationPreview;
@@ -298,6 +306,8 @@ export function Workbench({
             event.preventDefault(); setPage('setup'); setShowCoverage(false); setShowNav(false);
             window.history.pushState(null, '', `${basePath}?${new URLSearchParams({ ...selection, view: 'setup' })}`);
           }}><SettingsIcon size={16} aria-hidden="true" />Settings</a>
+        {release && <UpdateNotice update={release} />}
+        {version && <div className="dw-sidebar-footer">{`DesignBench ${version} · Local preview`}</div>}
         {!mobile && <div
           className="dw-sidebar-resizer" role="separator" tabIndex={0}
           aria-label="Resize component sidebar" aria-orientation="vertical"
@@ -322,6 +332,7 @@ export function Workbench({
         />}
       </aside>
       <main className="dw-main" inert={mobile && showNav ? true : undefined}>
+        {release && <DeprecationBanner update={release} />}
         <header className="dw-topbar">
           <div className="dw-topbar-start">
             <Button

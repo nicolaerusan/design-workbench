@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -7,6 +7,10 @@ import { execFileSync } from 'node:child_process';
 import { componentExports, scanProject } from '../cli/scan.mjs';
 import { initialize, addComponents, refreshInventory } from '../cli/setup.mjs';
 import { startDev } from '../cli/dev.mjs';
+
+// Dev servers started here keep their Vite cache out of the real per-user cache directory.
+process.env.XDG_CACHE_HOME = await fs.mkdtemp(path.join(os.tmpdir(), 'designbench-cache-'));
+after(() => fs.rm(process.env.XDG_CACHE_HOME, { recursive: true, force: true }));
 
 async function fixture(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'design-workbench-test-')));
@@ -129,5 +133,81 @@ test('dev serves setup guidance before init and can discover setup created while
   const configured = await server.transformRequest('virtual:design-workbench');
   assert.match(configured.code, /needsInit = false/);
   assert.match(configured.code, /catalog.ts/);
+  await server.close();
+});
+
+test('fixtures load one by one: a failed import is listed with its error and the rest render', async () => {
+  const { loadPreviews, PreviewLoadError, validateCatalog } = await import('../dist/index.js');
+  const entry = id => ({ id, name: id, group: 'Controls', source: `src/${id}.tsx`, description: '', variants: ['Default'], width: 400 });
+  const catalog = await loadPreviews({
+    './previews/button.tsx': async () => ({ entry: entry('button'), render: () => 'button rendered' }),
+    './previews/header-d866acee847f8d93.tsx': async () => { throw new ReferenceError('process is not defined'); },
+    './previews/Empty File.tsx': async () => ({}),
+    // Its file name matches a loaded fixture's ID, so the stand-in needs another one.
+    './previews/card.tsx': async () => { throw new Error('boom'); },
+    './previews/other.tsx': async () => ({ entry: entry('card'), render: () => 'card rendered' }),
+  });
+  assert.deepEqual(catalog.entries.map(item => item.id), ['empty-file', 'button', 'card-unloaded', 'header-d866acee847f8d93', 'card']);
+  assert.deepEqual(validateCatalog(catalog.entries), []);
+  assert.deepEqual(catalog.failures.map(item => [item.file, item.id, item.message]), [
+    ['.design-workbench/previews/Empty File.tsx', 'empty-file', 'A fixture must export `entry` and `render`.'],
+    ['.design-workbench/previews/card.tsx', 'card-unloaded', 'boom'],
+    ['.design-workbench/previews/header-d866acee847f8d93.tsx', 'header-d866acee847f8d93', 'process is not defined'],
+  ]);
+  const header = catalog.entries.find(item => item.id === 'header-d866acee847f8d93');
+  assert.deepEqual([header.name, header.group, header.source], ['header', 'Needs attention', '.design-workbench/previews/header-d866acee847f8d93.tsx']);
+  assert.match(header.description, /could not be loaded\. process is not defined/);
+  const select = component => ({ component, design: 'current', state: 'Default', viewport: 'fit' });
+  assert.equal(catalog.renderPreview(select('button')), 'button rendered');
+  assert.equal(catalog.renderPreview(select('card')), 'card rendered');
+  assert.throws(() => catalog.renderPreview(select('header-d866acee847f8d93')), error =>
+    error instanceof PreviewLoadError && error.file === '.design-workbench/previews/header-d866acee847f8d93.tsx' && error.reason === 'process is not defined');
+  assert.throws(() => catalog.renderPreview(select('missing')), /Unknown component: missing/);
+  assert.deepEqual((await loadPreviews({})).entries, []);
+});
+
+test('dev isolates a fixture that cannot build, explains why, and gives browser code a process.env', async t => {
+  const root = await fixture(t);
+  await fs.writeFile(path.join(root, 'src/Broken.tsx'), "import React from 'react'; import { missing } from './does-not-exist'; export function Broken() { return <p>{missing}</p>; }");
+  await initialize(root);
+  const added = await addComponents(root, { all: true });
+  const broken = added.find(item => item.id === 'src/Broken.tsx#Broken').file.split(path.sep).join('/');
+  const server = await startDev(root, { port: 0 });
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.httpServer.address().port}`;
+  const status = (query = '') => fetch(`${base}/__designbench/status${query}`).then(response => response.json());
+
+  // Next.js client modules and others read process.env while loading. Nothing from the host environment is exposed.
+  assert.match(await fetch(base).then(r => r.text()), /<script>globalThis\.process \?\?= \{ env: \{ NODE_ENV: "development" \}, browser: true \};<\/script>/);
+  const catalog = await fs.readFile(path.join(root, '.design-workbench/catalog.ts'), 'utf8');
+  assert.match(catalog, /await loadPreviews\(import\.meta\.glob\('\.\/previews\/\*\.tsx'\)\)/);
+  assert.doesNotMatch(catalog, /eager/);
+  const virtual = (await server.transformRequest('virtual:design-workbench')).code;
+  assert.doesNotMatch(virtual, /eager/);
+  assert.match(virtual, /PreviewLoadError/);
+  assert.equal(server.config.server.hmr.overlay, false);
+  assert.deepEqual(await status(), { errors: [], eagerCatalog: false });
+
+  // Load what a browser would: the catalog, the fixture, then the component the fixture imports.
+  assert.equal((await fetch(`${base}/.design-workbench/catalog.ts`)).status, 200);
+  assert.equal((await fetch(`${base}/${broken}`)).status, 200);
+  const before = Date.now();
+  assert.equal((await fetch(`${base}/src/Broken.tsx`)).status, 500);
+  const { errors } = await status(`?since=${before}`);
+  assert.equal(errors.length, 1);
+  assert.equal(errors[0].file, 'src/Broken.tsx');
+  assert.match(errors[0].message, /does-not-exist/);
+  assert.doesNotMatch(errors[0].message, new RegExp(root.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.deepEqual(errors[0].fixtures, [broken]);
+  // The same failure requested again by another preview frame is one record, not two.
+  assert.equal((await fetch(`${base}/src/Broken.tsx`)).status, 500);
+  assert.equal((await status()).errors.length, 1);
+  assert.deepEqual((await status(`?since=${Date.now() + 60_000}`)).errors, []);
+  // The working component still builds.
+  assert.equal((await fetch(`${base}/src/Button.tsx`)).status, 200);
+
+  // A catalog written by an earlier version is recognised, so the page can say how to update it.
+  await fs.writeFile(path.join(root, '.design-workbench/catalog.ts'), "const modules = import.meta.glob('./previews/*.tsx', { eager: true });\nexport const entries = [];\nexport const renderPreview = () => null;\n");
+  assert.equal((await status()).eagerCatalog, true);
   await server.close();
 });
