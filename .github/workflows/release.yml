@@ -1,0 +1,44 @@
+name: Release
+
+# Publishes to npm from a version tag using npm trusted publishing (OIDC).
+# No npm token is stored in this repository. See docs/releasing.md.
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Add required reviewers to this environment so a tag alone cannot publish.
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write # OIDC for npm trusted publishing and provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false # never restore caches into a release build
+      - name: Tag matches the package version
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - name: Tagged commit is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --omit=dev --audit-level=high
+      - run: npm audit signatures
+      - run: npm publish --access public

@@ -11,7 +11,7 @@ The goal is a finished preview for every visual component, not a list of drafts.
 3. Finish each generated fixture. Supply realistic synthetic props and children, providers, and callbacks. Add named states to entry.variants with entry.stateProps (default, empty, loading, error, disabled, long text; only those that apply), entry.propControls for the props worth editing live, a one-sentence description, and a sensible group. Empty props are a starting point, not a guarantee of a valid render. Remove draft: true when the preview is finished.
 4. Import required shared CSS in catalog.ts. The standalone Vite runner supports client-renderable React code. For framework-specific server components, use a client fixture or mount Workbench in the host app as documented in the package README.
 5. Mock network, authentication, and server dependencies. Do not call real write APIs from fixtures.
-6. Run designbench dev and open each preview. Fix failures before claiming a component is covered. Settings shows how many component files still lack a preview.
+6. Run designbench dev and open each preview. A fixture whose imports fail appears under "Needs attention" with the error; the others keep working. Fix failures before claiming a component is covered. Settings shows how many component files still lack a preview.
 7. Rerun designbench scan --write after source changes. Keep decisions in fixture files; inventory.json is generated.
 8. Report what you added, what you skipped and why, and anything that needs the user's input. Do not change application source while populating.
 
