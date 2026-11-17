@@ -11,6 +11,7 @@ import { NavigationPreview as DefaultNavigationPreview } from './navigation-prev
 import { InspectorViewToggle, PreviewInspector, useInspectorView } from './preview-inspector.tsx';
 import { CodePanel, type SourceAccess } from './code-panel.tsx';
 import { DesignPicker, VariantsPanel, type VariantActions } from './variant-guide.tsx';
+import { GridToggle, VariantGrid } from './variant-grid.tsx';
 import { PreviewThumbnail } from './thumbnail.tsx';
 import { CopyButton, SetupGuide } from './setup-guide.tsx';
 import { populatePrompt } from './agent-prompts.ts';
@@ -116,6 +117,27 @@ export function Workbench({
   const [shortcutModifier, setShortcutModifier] = useState('⌘');
   useEffect(() => { setShortcutModifier(/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'); }, []);
   const [compare, setCompare] = useState(false);
+  // The grid is a way of looking, so it survives the page reloads that source edits trigger (for this browser tab only).
+  const gridKey = `design-workbench:${projectId}:grid`;
+  const [grid, setGridState] = useState(false);
+  useEffect(() => {
+    // A link to one grid cell says so (`grid=off`): a tab opened from the grid can inherit the grid from the tab it came
+    // from, and would otherwise show the whole grid again. The mark is used once, then dropped from the address.
+    const query = new URLSearchParams(window.location.search);
+    if (query.get('grid') === 'off') {
+      query.delete('grid');
+      window.history.replaceState(window.history.state, '', `${window.location.pathname}${query.toString() ? `?${query}` : ''}${window.location.hash}`);
+      try { sessionStorage.removeItem(gridKey); } catch {}
+      setGridState(false);
+      return;
+    }
+    try { setGridState(sessionStorage.getItem(gridKey) === 'on'); } catch {}
+  }, [gridKey]);
+  const setGrid = (next: boolean) => {
+    setGridState(next);
+    if (next) setCompare(false);
+    try { if (next) sessionStorage.setItem(gridKey, 'on'); else sessionStorage.removeItem(gridKey); } catch {}
+  };
   const [inspectorView, setInspectorView] = useInspectorView(projectId);
   const [reset, setReset] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -181,13 +203,17 @@ export function Workbench({
   const viewPage = showingSetup ? 'settings' : showingOverview ? 'overview' : showCoverage ? 'coverage' : 'component';
   const reportView = useRef(onViewChange);
   reportView.current = onViewChange;
-  useEffect(() => { if (ready) reportView.current?.({ page: viewPage, selection, comparing: compare }); }, [ready, viewPage, selection, compare]);
-  // A configured project reaches setup commands from Settings; a new one is still setting up.
-  const setupTitle = needsInit || !entries.length ? 'Setup' : 'Settings';
   const designs = entry ? designsFor(entry) : [];
   const design = designs.find((item) => item.id === selection.design) ?? designs[0];
+  // The grid needs something to lay out: more than one state, or more than one variant.
+  const canGrid = !!entry && (entry.variants.length > 1 || designs.length > 1);
+  const showGrid = grid && canGrid;
+  useEffect(() => { if (ready) reportView.current?.({ page: viewPage, selection, comparing: compare, grid: showGrid }); }, [ready, viewPage, selection, compare, showGrid]);
+  // A configured project reaches setup commands from Settings; a new one is still setting up.
+  const setupTitle = needsInit || !entries.length ? 'Setup' : 'Settings';
   const update = (patch: Partial<Selection>, replace = false) => {
-    if (patch.component !== undefined || patch.state !== undefined) patch = { ...patch, props: '' };
+    // A new component or state starts from its own properties, unless the caller carries edits over.
+    if (patch.component !== undefined || patch.state !== undefined) patch = { props: '', ...patch };
     const next = resolveSelection(entries, new URLSearchParams({ ...selection, ...patch }));
     setSelection(next);
     setPage('components');
@@ -203,6 +229,8 @@ export function Workbench({
     setQuery(''); setShowCoverage(false); setShowNav(false); setCopyError('');
     window.history.pushState(null, '', basePath);
   };
+  // Choosing one variant shows it on its own, whichever view was open.
+  const selectDesign = (id: string) => { setCompare(false); setGrid(false); update({ design: id }); };
   const groups = [...new Set(entries.map((item) => item.group))];
   const filtered = entries.filter((item) =>
     `${item.name} ${item.id} ${item.group} ${item.source}`
@@ -429,33 +457,47 @@ export function Workbench({
             view={inspectorView} onViewChange={setInspectorView}
             onViewportChange={viewport => update({ viewport })} onReset={() => setReset(value => value + 1)}
             onStateChange={state => update({ state })} onPropsChange={props => update({ props: JSON.stringify(props) }, true)}
-            toolbar={designs.length > 1 ? (
-              <DesignPicker entry={entry} designs={designs} active={design} compare={compare} thumbnailUrl={thumbnailUrl}
-                onSelect={id => { setCompare(false); update({ design: id }); }} onCompare={() => setCompare(true)} />
-            ) : (
-              <div className="dw-preview-caption" title={design.description}><span>{design.name}</span><Status idea={design} /></div>
-            )}
+            toolbar={<>
+              {designs.length > 1 ? (
+                <DesignPicker entry={entry} designs={designs} active={design} compare={compare} grid={showGrid} thumbnailUrl={thumbnailUrl}
+                  onSelect={selectDesign} onCompare={() => { setGrid(false); setCompare(true); }} />
+              ) : (
+                <div className="dw-preview-caption" title={design.description}><span>{design.name}</span><Status idea={design} /></div>
+              )}
+              {canGrid && <GridToggle pressed={showGrid} onPressedChange={setGrid}
+                hint={designs.length < 2 ? 'Every state at once' : entry.variants.length < 2 ? 'Every variant at once' : 'Every variant at every state'} />}
+            </>}
             panels={[
               { id: 'code', label: 'Code', content: <div className="dw-panel-stack">
-                <CodePanel key={entry.id} entry={entry} designs={designs} active={design} compare={compare}
-                  access={sourceAccess} onSelect={id => { setCompare(false); update({ design: id }); }} />
+                <CodePanel key={entry.id} entry={entry} designs={designs} active={design} compare={compare || showGrid}
+                  access={sourceAccess} onSelect={selectDesign} />
                 {!!design.references?.length && <References design={design} />}
                 <ContextPanel key={`contexts:${entry.id}`} entry={entry} entries={entries} basePath={basePath} controls={controls} navigate={update} />
               </div> },
-              { id: 'variants', label: 'Variants', content: <VariantsPanel key={entry.id} entry={entry} designs={designs} active={design} compare={compare}
-                command={setupCommand} actions={variantActions} thumbnailUrl={thumbnailUrl} onSelect={id => { setCompare(false); update({ design: id }); }} /> },
+              { id: 'variants', label: 'Variants', content: <VariantsPanel key={entry.id} entry={entry} designs={designs} active={design} compare={compare || showGrid}
+                command={setupCommand} actions={variantActions} thumbnailUrl={thumbnailUrl} onSelect={selectDesign} /> },
             ]}>
-            <div className={`dw-previews ${compare ? 'dw-compare' : ''}`}>
-              {ready ? (
-                compare ? (
-                  designs.map(frame)
+            {showGrid && ready ? (
+              // Property edits are part of every cell's URL, so they show in all of them. A chosen cell opens on its own
+              // exactly as the grid showed it, edits included.
+              <VariantGrid key={entry.id} entry={entry} designs={designs} active={design} state={selection.state}
+                command={setupCommand} viewport={selection.viewport} restart={reset}
+                cellUrl={(id, state) => previewUrl(basePath, entry, { ...selection, state }, id)}
+                cellHref={(id, state) => `${basePath}?${new URLSearchParams({ ...selection, design: id, state, grid: 'off' })}`}
+                onOpen={(id, state) => { setGrid(false); update({ design: id, state, props: selection.props ?? '' }); }} />
+            ) : (
+              <div className={`dw-previews ${compare ? 'dw-compare' : ''}`}>
+                {ready ? (
+                  compare ? (
+                    designs.map(frame)
+                  ) : (
+                    frame(design)
+                  )
                 ) : (
-                  frame(design)
-                )
-              ) : (
-                <p className="dw-empty">Loading preview…</p>
-              )}
-            </div>
+                  <p className="dw-empty">Loading preview…</p>
+                )}
+              </div>
+            )}
           </PreviewInspector>
         ))}
       </main>

@@ -22,6 +22,7 @@ We wanted a small bench beside the product: the real component on one side, seve
 | Component catalog | Named components grouped by category; search by name, ID, group, or source path; Cmd/Ctrl+K focuses search. |
 | Multiple design directions | Each component can retain several named designs with stable IDs, descriptions, source paths, and references. Designs are registered in the project manifest. |
 | Side-by-side comparison | Compare all registered designs for one component using the same selected fixture state and viewport. |
+| Grid view | See every variant of a component at every state in one matrix of live previews. Property edits reach every cell, and a cell opens on its own with one click. |
 | Interactive preview panels | Render real components in host-provided iframes, open a preview independently, and reset its mounted state. |
 | Editable properties | Text, boolean, select, and number controls; named-state presets; validated overrides included in shared URLs. |
 | Responsive inspection | Fit the panel or select 375, 768, or 1280 px preview widths. |
@@ -41,7 +42,7 @@ The current AI workflow uses an external coding agent: edit component source and
 
 1. Open a component and inspect its current implementation, states, and usage.
 2. Keep a new direction as a separate source component and manifest design rather than overwriting the previous idea.
-3. Compare directions in browser panels at the same state and viewport.
+3. Compare directions in browser panels at the same state and viewport, or all of them at every state in the grid.
 4. Describe what to change, then iterate with your coding agent.
 5. Inspect registered parent compositions to understand the surrounding layout.
 6. Adopt a direction in the application's source and update its reviewed usage evidence.
@@ -165,7 +166,7 @@ Cursor and other agents take an `mcpServers` entry with the same command; Settin
 
 | Tool | What it does |
 | --- | --- |
-| `get_current_view` | The component, variant, state, edited properties, and files behind what is open in your workbench tab. |
+| `get_current_view` | The component, variant, state, edited properties, and files behind what is open in your workbench tab, and whether every variant is on screen (side by side, or as the grid of every state). |
 | `open_view` | Shows a component, variant, state, or viewport width in your workbench tab, and returns its URL. |
 | `list_components` | Every component with its states and variants, the previews still marked as drafts, and component files without a preview. |
 
@@ -194,6 +195,8 @@ This creates project-owned files:
 ```
 
 Edit the copied implementation or ask your agent to do so. The standalone runner discovers it automatically. Above the preview are two separate controls: **Source component** shows your app's code (hover it to see which file it renders), and the **Variant** menu switches to a saved variant or **Compare all side by side**. The menu shows a live thumbnail of each variant at the current state. They share state presets, properties, and viewport settings. Commit the whole folder to retain history. Delete a variant folder to remove it from the catalog.
+
+Beside those controls, **Grid** shows every variant against every state at once: variants are rows, with your app's component first and tagged **Source**, and the states your fixture defines are columns. Each cell is a live preview, so an edit in the **Properties** tab shows in all of them, and the **View** menu's width applies to every cell. Click a cell to open that variant at that state on its own, with your edits kept; a cell is a link, so it opens in a new tab the same way. The last row, **New variants**, copies a prompt that asks your agent for more; each variant it saves appears as a new row. The grid is offered when a component has more than one state or more than one variant, and stays on through the page reloads that source edits cause.
 
 The inspector's **Variants** tab lists each variant with a thumbnail, offers **Use … in my app** for the selected one, and includes **Create a variant → Copy agent instructions**. The generated `.design-workbench/AGENT.md` explains creation, fixture setup, comparison, and adoption. Selecting a preview does not modify the app. The **Source preview** is the baseline from its source file; production usage is only labeled when a maintainer has supplied reviewed evidence.
 
@@ -305,7 +308,7 @@ const props = resolvePreviewProps(entry, selection);
 return <Button {...fixtureProps} {...props} />;
 ```
 
-Precedence is defaults, then the selected state preset, then validated URL overrides. Switching state or component clears overrides. **Reset properties** returns to preset values; **Reset** remounts the preview with current values. Comparison panels receive the same overrides. **Share** copies the current URL and briefly shows **Copied**; a localhost URL still needs the project running on the recipient's machine.
+Precedence is defaults, then the selected state preset, then validated URL overrides. Switching state or component clears overrides. **Reset properties** returns to preset values; **Reset** remounts the preview with current values. Comparison panels and grid cells receive the same overrides. **Share** copies the current URL and briefly shows **Copied**; a localhost URL still needs the project running on the recipient's machine.
 
 Controls are explicitly declared by the fixture author, not inferred from all component props. Only declared string, boolean, and finite number values are accepted; invalid options, out-of-range numbers, malformed JSON, and undeclared props are ignored. Strings are limited to 2,000 characters and serialized overrides to 16,000 characters. Functions, JSX, providers, and complex data remain in fixture code. Existing hosts without `propControls` keep their state-based previews unchanged.
 

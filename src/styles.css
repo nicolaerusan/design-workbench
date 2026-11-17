@@ -543,6 +543,59 @@
 .dw-ask-list li { width: fit-content; max-width: 100%; padding: 6px 12px; border-radius: 14px 14px 14px 4px; background: #f5f5f2; color: var(--dw-ink); font-size: 13px; line-height: 1.45; }
 .dw-ask-card code { font-size: 11.5px; overflow-wrap: anywhere; }
 
+/* Grid view: every variant (rows) at every state (columns), as live miniatures on a dotted canvas. */
+.dw-stage-toolbar-start { flex-wrap: wrap; gap: 8px; }
+.dw-grid-canvas {
+  --dw-grid-bg: #f6f6f3;
+  --dw-grid-label: 152px;
+  /* Columns share the canvas width between a readable minimum and a roomy maximum; beyond that the grid scrolls. */
+  --dw-grid-cell: clamp(var(--dw-grid-min, 184px), calc((100cqw - var(--dw-grid-label) - 24px) / var(--dw-grid-states, 1) - 12px), var(--dw-grid-max, 340px));
+  flex: 1; min-height: 160px; overflow: auto; container-type: inline-size;
+  border: 1px solid var(--dw-line); border-radius: 8px;
+  background: var(--dw-grid-bg) radial-gradient(circle, #d3d3cd 1px, transparent 1.5px) 0 0 / 16px 16px local;
+  scrollbar-width: thin; scrollbar-color: #d5d5d0 transparent;
+}
+.dw-grid-canvas:focus-visible { outline: 2px solid #73736e; outline-offset: -2px; }
+.dw-grid { border-collapse: separate; border-spacing: 0; margin: 0; padding: 0 10px 12px 0; }
+.dw-grid th { font: inherit; text-align: left; }
+.dw-grid td { padding: 6px; }
+/* Labels stay in view while the cells scroll beneath them. */
+.dw-grid-corner, .dw-grid-state, .dw-grid-variant { position: sticky; background: var(--dw-grid-bg); }
+.dw-grid td.dw-grid-corner { top: 0; left: 0; z-index: 3; padding: 0; }
+.dw-grid th.dw-grid-state { top: 0; z-index: 2; padding: 14px 6px 4px 8px; color: var(--dw-muted); font: 500 10.5px/1.4 var(--dw-font-mono); letter-spacing: .07em; text-transform: uppercase; white-space: nowrap; }
+/* The label column has one width, whatever the names: long ones wrap inside it. */
+.dw-grid-variant { left: 0; z-index: 1; width: var(--dw-grid-label); min-width: var(--dw-grid-label); padding: 0 10px 0 16px; vertical-align: middle; }
+.dw-grid-name, .dw-grid-tag { display: block; max-width: calc(var(--dw-grid-label) - 26px); }
+.dw-grid-name { font-size: 13px; font-weight: 500; line-height: 1.35; overflow-wrap: break-word; }
+.dw-grid-tag { margin-top: 3px; color: #8a8a83; font: 500 10px/1.4 var(--dw-font-mono); letter-spacing: .07em; text-transform: uppercase; }
+.dw-grid-cell {
+  position: relative; display: block; overflow: hidden;
+  width: var(--dw-grid-cell); height: var(--dw-grid-height, clamp(116px, calc(var(--dw-grid-cell) * .42), 160px));
+  border: 1px solid var(--dw-line); border-radius: 12px; background: white; box-shadow: 0 1px 2px #20201e08;
+  transition: border-color 140ms, box-shadow 140ms, width 180ms, height 180ms;
+}
+.dw-grid-cell:hover { border-color: #c7c7c0; box-shadow: 0 4px 16px #20201e12; }
+/* The selected cell is the one the Properties tab describes. */
+.dw-grid-cell[aria-current] { border-color: #8a8a83; }
+.dw-workbench .dw-grid-cell:focus-visible { outline-offset: 2px; }
+.dw-grid-thumbnail { position: absolute; inset: 0; overflow: hidden; }
+.dw-grid-thumbnail iframe { position: absolute; left: 0; top: 0; border: 0; background: transparent; transform-origin: top left; pointer-events: none; transition: opacity 160ms; }
+.dw-grid-open { position: absolute; top: 7px; right: 7px; display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid var(--dw-line); border-radius: 6px; background: white; color: #6b6b65; opacity: 0; transition: opacity 120ms; }
+.dw-grid-cell:focus-visible .dw-grid-open { opacity: 1; }
+@media (hover: hover) { .dw-grid-cell:hover .dw-grid-open { opacity: 1; } }
+/* The last row is a request, not a variant: the agent makes them, and they arrive as rows. */
+.dw-grid-new .dw-grid-name { display: flex; align-items: center; gap: 5px; color: var(--dw-muted); }
+.dw-grid-new svg { flex-shrink: 0; }
+.dw-grid-ask { position: sticky; left: calc(var(--dw-grid-label) + 6px); display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; max-width: min(600px, calc(100cqw - var(--dw-grid-label) - 24px)); min-height: 56px; padding: 10px 12px 10px 16px; border: 1px dashed #cdcdc7; border-radius: 12px; background: #ffffff8c; }
+.dw-grid-ask p { flex: 1 1 220px; margin: 0; color: var(--dw-muted); font-size: 12px; line-height: 1.55; }
+.dw-grid-ask .dw-copy-fallback { flex-basis: 100%; padding: 8px 10px; border: 1px solid var(--dw-line); border-radius: 8px; color: #62625a; font: 12px/1.5 var(--dw-font-mono); resize: vertical; }
+@media (max-width: 700px) {
+  /* One whole cell beside the label. With more states, the next one peeks in to show there is more. */
+  .dw-grid-canvas { --dw-grid-label: 108px; --dw-grid-cell: clamp(168px, calc(100cqw - var(--dw-grid-label) - 24px - min(1, var(--dw-grid-states, 1) - 1) * 28px), var(--dw-grid-max, 340px)); }
+  .dw-grid-variant { padding: 0 6px 0 12px; }
+  .dw-grid-name, .dw-grid-tag { max-width: calc(var(--dw-grid-label) - 18px); }
+}
+
 /* Update notice in the sidebar, and the banner for a deprecated release. */
 .dw-sidebar-footer { flex-shrink: 0; padding: 8px 10px 0; color: #8a8a83; font-size: 11px; }
 .dw-update { flex-shrink: 0; margin-top: 8px; border: 1px solid var(--dw-line); border-radius: 8px; background: var(--dw-bg); font-size: 12px; }

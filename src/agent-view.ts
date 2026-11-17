@@ -7,6 +7,8 @@ export interface WorkbenchView {
   selection: Selection;
   /** Every variant is shown side by side. */
   comparing: boolean;
+  /** Every variant is shown at every state, in a grid. */
+  grid: boolean;
 }
 /** An agent that has called in over MCP. */
 export interface AgentConnection {
@@ -34,6 +36,7 @@ export function describeView(entries: WorkbenchEntry[], view: WorkbenchView, bas
     state: view.selection.state,
     viewport: view.selection.viewport,
     ...(view.comparing ? { comparing: true } : {}),
+    ...(view.grid ? { grid: true } : {}),
     properties: resolvePreviewProps(entry, view.selection),
     ...(Object.keys(edited).length ? { editedProperties: edited } : {}),
     previewPath: previewUrl(basePath, entry, view.selection, design.id),
