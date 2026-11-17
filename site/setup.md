@@ -11,14 +11,14 @@ The setup has three parts. Finish each one before starting the next, so a proble
 This part is the same for every project.
 
 1. **Check the project fits.** DesignBench needs React 18.2 or 19 and Node 20.19+ or 22.12+. In a monorepo, find the app or package the person is working on, and ask them if it's unclear. If there's no React app, or Node is too old, stop and tell them why.
-2. **Install the preview build as a dev dependency**, using the package manager the project already uses (check the lockfile). With npm:
+2. **Install DesignBench as a dev dependency**, using the package manager the project already uses (check the lockfile). With npm:
 
    ```
-   npm install --save-dev https://github.com/nicolaerusan/design-workbench/releases/download/v0.3.0/designbench-0.3.0.tgz
+   npm install --save-dev designbench
    ```
 
-   With pnpm, yarn or bun, add the same URL as a dev dependency.
-3. **Create the workbench.** Run `npx designbench init`. In a monorepo, add `--cwd <app folder>`. If the components live in a few known folders, add `--source <folder>` for each one so discovery stays focused.
+   With pnpm, run `pnpm add -D designbench`. With yarn, `yarn add -D designbench`. With bun, `bun add -d designbench`. If the install warns about install or build scripts it didn't run, for example for fsevents or esbuild, leave it. DesignBench doesn't need them, so don't approve them or change the project's script settings.
+3. **Create the workbench.** Run `npx designbench init`. In a monorepo, add `--cwd <app folder>`. If the components live in a few known folders, add `--source <folder>` for each one so discovery stays focused. In a Yarn Plug'n'Play project, which has no `node_modules`, use `yarn designbench` wherever this guide says `npx designbench`.
 4. **Read `.design-workbench/AGENT.md`.** It explains how previews, states, variants and promotion work. Follow it for everything after this.
 5. **Check that the tool runs.** Start `npx designbench dev` and open `http://127.0.0.1:7070`. The built-in "Welcome button" preview should render. If it doesn't, fix that first, because the problem is in the install, not in the project's components.
 
