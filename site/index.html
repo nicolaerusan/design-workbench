@@ -150,6 +150,9 @@ h1 .soft { color: var(--muted-2); }
   color: var(--muted);
 }
 .lede { margin: 0; font-size: clamp(19px, 2vw, 21px); }
+.quick-note { margin: -10px 0 0; max-width: 62ch; font-size: 14.5px; line-height: 1.55; color: var(--muted); }
+.quick-note code { color: var(--fg); }
+.quick-note code, .happens code { white-space: nowrap; }
 
 .agents { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .agents-label {
@@ -538,6 +541,9 @@ h1 .soft { color: var(--muted-2); }
 .prose a:hover { text-decoration-color: currentColor; }
 code { font-family: var(--font-mono); font-size: .8em; letter-spacing: 0; padding: .12em .38em; border-radius: 5px; background: var(--chip); }
 
+.happens { margin: -4px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: happen; }
+.happens li { position: relative; padding-left: 32px; counter-increment: happen; }
+.happens li::before { content: counter(happen); position: absolute; left: 0; top: .42em; font-family: var(--font-mono); font-size: 13px; line-height: 1.4; color: var(--muted); }
 .steps { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 26px; counter-reset: step; }
 .steps li { display: grid; grid-template-columns: 44px minmax(0, 1fr); counter-increment: step; }
 .steps li::before { content: counter(step, decimal-leading-zero); padding-top: 4px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0; color: var(--muted); }
@@ -870,11 +876,12 @@ input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
         </div>
         <div class="quick-bench">
           <div class="quick-line">
-            <code><span class="caret tok-com" aria-hidden="true">&gt; </span><span data-copy-src>Set up DesignBench: https://designbench.pattern.garden/setup.md</span></code>
+            <code><span class="caret tok-com" aria-hidden="true">&gt; </span><span data-copy-src>Set up DesignBench: https://component.garden/setup.md</span></code>
             <button class="quick-copy" type="button" data-copy-btn aria-label="Copy the setup line"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-copy-label>Copy</span></button>
           </div>
         </div>
       </div>
+      <p class="quick-note">Paste it with your React project open. Your agent installs DesignBench as a dev dependency, writes previews into a new <code>.design-workbench/</code> folder, and sends you a link to the bench on your machine. Your app’s code stays as it is.</p>
     </header>
 
     <figure class="wide stage" aria-label="An agent chat creating pricing card variants on the DesignBench canvas">
@@ -1062,7 +1069,14 @@ input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
 
     <section class="col prose" id="start" aria-labelledby="start-h">
       <h2 id="start-h">Start in your agent</h2>
-      <p>Paste one line into your agent. It installs DesignBench, fits it to your project’s components and styles, checks every preview, and sends you a link.</p>
+      <p>Open your React project in Claude Code, Codex or Cursor and paste one line. Your agent reads the setup guide and does the rest:</p>
+      <ol class="happens">
+        <li>Checks the project fits: React 18.2 or 19, and Node 20.19+ or 22.12+.</li>
+        <li>Installs DesignBench as a dev dependency and creates a <code>.design-workbench/</code> folder.</li>
+        <li>Fits it to your app: your global styles and providers, and previews with real content for the 5 to 8 components you use most.</li>
+        <li>Opens every preview to check it renders, then sends you a link to the bench, running on your machine at <code>127.0.0.1:7070</code>.</li>
+      </ol>
+      <p>It only changes <code>.design-workbench/</code>, <code>package.json</code> and your lockfile, and it doesn’t commit anything. You can <a href="setup.md">read the guide your agent follows</a>.</p>
     </section>
 
     <figure class="wide install" aria-label="Install DesignBench">
@@ -1089,7 +1103,7 @@ input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
           <h3><svg class="logo agent-logo" aria-hidden="true"><use href="#logo-claude" data-agent-logo/></svg><span>Set up DesignBench for your project</span></h3>
           <div class="quick-bench quick-framed" data-copy-scope>
             <div class="quick-line">
-              <code><span class="caret tok-com" aria-hidden="true">&gt; </span><span data-copy-src>Set up DesignBench: https://designbench.pattern.garden/setup.md</span></code>
+              <code><span class="caret tok-com" aria-hidden="true">&gt; </span><span data-copy-src>Set up DesignBench: https://component.garden/setup.md</span></code>
               <button class="quick-copy" type="button" data-copy-btn aria-label="Copy the setup line"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-copy-label>Copy</span></button>
             </div>
           </div>
@@ -1103,13 +1117,14 @@ input[type="range"] { width: 100%; margin: 6px 0; accent-color: var(--fg); }
           <h3>Install from your terminal</h3>
           <p class="card-desc">Run these in your React project. You need Node 20.19+ or 22.12+.</p>
           <div class="rows">
-            <div class="code-row" data-copy-scope><code data-copy-src>npm install <span class="tok-flag">--save-dev</span> https://github.com/nicolaerusan/design-workbench/releases/download/v0.3.0/designbench-0.3.0.tgz</code><button class="copy-icon" type="button" data-copy-btn aria-label="Copy install command"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+            <div class="code-row" data-copy-scope><code data-copy-src>npm install <span class="tok-flag">--save-dev</span> designbench</code><button class="copy-icon" type="button" data-copy-btn aria-label="Copy install command"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
             <div class="code-row" data-copy-scope><code data-copy-src>npx designbench init<span class="tok-com">        # creates .design-workbench/</span></code><button class="copy-icon" type="button" data-copy-btn aria-label="Copy init command"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
-            <div class="code-row" data-copy-scope><code data-copy-src>npx designbench add <span class="tok-flag">--all</span><span class="tok-com">   # draft previews for every component</span></code><button class="copy-icon" type="button" data-copy-btn aria-label="Copy add command"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
-            <div class="code-row" data-copy-scope><code data-copy-src>npx designbench dev<span class="tok-com">         # opens 127.0.0.1:7070</span></code><button class="copy-icon" type="button" data-copy-btn aria-label="Copy dev command"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+            <div class="code-row" data-copy-scope><code data-copy-src>npx designbench dev<span class="tok-com">         # then open 127.0.0.1:7070</span></code><button class="copy-icon" type="button" data-copy-btn aria-label="Copy dev command"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
           </div>
-          <p class="card-desc">Then ask <span data-agent-tool>Claude Code</span> to finish the drafts:</p>
-          <div class="code-row" data-copy-scope><code data-copy-src>Read .design-workbench/AGENT.md and finish the draft previews.</code><button class="copy-icon" type="button" data-copy-btn aria-label="Copy follow-up prompt"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+          <p class="card-desc">You’ll see a sample “Welcome button”. Leave the bench running and, in another terminal, add your own components one at a time. Their ids are in <code>.design-workbench/inventory.json</code>:</p>
+          <div class="code-row" data-copy-scope><code data-copy-src>npx designbench add 'path/to/File.tsx#ExportName'</code><button class="copy-icon" type="button" data-copy-btn aria-label="Copy add command"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+          <p class="card-desc">Then ask <span data-agent-tool>Claude Code</span> to fit the drafts to your app’s styles, providers and content:</p>
+          <div class="code-row" data-copy-scope><code data-copy-src>Fit DesignBench to this project: follow Part 2 of https://component.garden/setup.md</code><button class="copy-icon" type="button" data-copy-btn aria-label="Copy follow-up prompt"><svg class="ic-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10.5 3.6V3.3A1.8 1.8 0 0 0 8.7 1.5H4.3a1.8 1.8 0 0 0-1.8 1.8v4.4a1.8 1.8 0 0 0 1.8 1.8h.3" fill="none" stroke="currentColor" stroke-width="1.4"/></svg><svg class="ic-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4 6.5 11.3 12.5 4.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
         </div>
 
         <div class="install-card" role="tabpanel" id="panel-mcp" aria-labelledby="mode-mcp" hidden>
