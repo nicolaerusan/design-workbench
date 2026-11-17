@@ -12,6 +12,7 @@ import { NavigationPreview as DefaultNavigationPreview } from './navigation-prev
 import { PreviewInspector } from './preview-inspector.tsx';
 import { VariantGuide } from './variant-guide.tsx';
 import { SetupGuide } from './setup-guide.tsx';
+import { DeprecationBanner, UpdateNotice } from './update-notice.tsx';
 import { ContextPanel } from './contexts.tsx';
 import { designsFor, previewUrl, resolveSelection, safeReferenceUrl } from './model.ts';
 import type {
@@ -19,6 +20,7 @@ import type {
   DesignIdea,
   DesignReference,
   Selection,
+  UpdateInfo,
   WorkbenchEntry,
 } from './model.ts';
 
@@ -37,6 +39,10 @@ export interface WorkbenchProps {
   setupCommand?: string;
   /** The standalone CLI has not created its project configuration yet. */
   needsInit?: boolean;
+  /** The running DesignBench version, shown in the sidebar footer. */
+  version?: string;
+  /** A newer or deprecated release, when the host has checked for one. */
+  update?: UpdateInfo;
 }
 /** A live, non-interactive miniature of an entry's default preview. */
 function TileThumbnail({ title, url, width }: { title: string; url: string; width: number }) {
@@ -68,6 +74,8 @@ export function Workbench({
   scopeNote,
   setupCommand,
   needsInit = false,
+  version,
+  update: release,
 }: WorkbenchProps) {
   const { Button, Input } = controls;
   const NavigationPreview = controls.NavigationPreview ?? DefaultNavigationPreview;
@@ -290,7 +298,8 @@ export function Workbench({
             event.preventDefault(); setPage('setup'); setShowCoverage(false); setShowNav(false);
             window.history.pushState(null, '', `${basePath}?${new URLSearchParams({ ...selection, view: 'setup' })}`);
           }}><BookOpen size={16} aria-hidden="true" />Setup</a>
-        <div className="dw-sidebar-footer">Local preview · source edits refresh live</div>
+        {release && <UpdateNotice update={release} />}
+        <div className="dw-sidebar-footer">{version && `DesignBench ${version} · `}Local preview · source edits refresh live</div>
         {!mobile && <div
           className="dw-sidebar-resizer" role="separator" tabIndex={0}
           aria-label="Resize component sidebar" aria-orientation="vertical"
@@ -315,6 +324,7 @@ export function Workbench({
         />}
       </aside>
       <main className="dw-main" inert={mobile && showNav ? true : undefined}>
+        {release && <DeprecationBanner update={release} />}
         <header className="dw-header">
           <div>
             <Button
