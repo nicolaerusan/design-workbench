@@ -71,7 +71,7 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.52.0",
     "react-resizable-panels": "^3.0.6",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.8"
   },
   "publishConfig": {
