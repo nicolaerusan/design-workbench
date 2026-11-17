@@ -22,17 +22,11 @@ export async function initialize(root, { sources } = {}) {
   await fs.writeFile(path.join(dir, 'catalog.ts'), `/// <reference types="vite/client" />
 // This file belongs to your project. Customize it for providers or shared styles.
 // Import your global CSS here if required by your components.
-const modules = import.meta.glob('./previews/*.tsx', { eager: true });
-export const previews = Object.values(modules) as Array<{
-  entry: import('designbench').WorkbenchEntry;
-  render: (selection: import('designbench').Selection) => import('react').ReactNode;
-}>;
-export const entries = previews.map(preview => preview.entry);
-export function renderPreview(selection: import('designbench').Selection) {
-  const preview = previews.find(preview => preview.entry.id === selection.component);
-  if (!preview) throw new Error('Unknown component: ' + selection.component);
-  return preview.render(selection);
-}
+import { loadPreviews } from 'designbench';
+
+// Fixtures load one by one. A fixture that cannot be imported is listed under
+// "Needs attention" with its error instead of stopping the others.
+export const { entries, renderPreview } = await loadPreviews(import.meta.glob('./previews/*.tsx'));
 `, { flag: 'wx' });
   await fs.writeFile(path.join(dir, 'previews/welcome.tsx'), `import React from 'react';
 import { resolvePreviewProps, type WorkbenchEntry, type Selection } from 'designbench';
@@ -76,7 +70,7 @@ Read config.json, inventory.json, catalog.ts, and previews/ in this directory. F
 3. Edit the generated fixtureProps and render functions. Supply realistic synthetic data, useful states, providers, and callbacks. Empty props are a starting point, not a guarantee of a valid render.
 4. Import required shared CSS in catalog.ts. The standalone Vite runner supports client-renderable React code. For framework-specific server components, use a client fixture or mount Workbench in the host app as documented in the package README.
 5. Mock network, authentication, and server dependencies. Do not call real write APIs from fixtures.
-6. Run designbench dev and verify actual previews. Fix failures before claiming a component is covered.
+6. Run designbench dev and verify actual previews. A fixture whose imports fail appears under "Needs attention" with the error; the others keep working. Fix failures before claiming a component is covered.
 7. Rerun designbench scan --write after source changes. Keep decisions in fixture files; inventory.json is generated.
 
 ## Design iteration

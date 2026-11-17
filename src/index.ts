@@ -5,5 +5,8 @@ export * from './model.ts';
 export { patternGardenReferences } from './pattern-garden.ts';
 export type { PatternGardenSource } from './pattern-garden.ts';
 export { SetupGuide } from './setup-guide.tsx';
+export { UpdateNotice, DeprecationBanner } from './update-notice.tsx';
+export { loadPreviews, PreviewLoadError } from './previews.ts';
+export type { PreviewModule, PreviewFailure } from './previews.ts';
 export { withVariants } from './variants.ts';
 export type { SavedVariant } from './variants.ts';

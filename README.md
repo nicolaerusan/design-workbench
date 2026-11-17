@@ -6,7 +6,7 @@ The vision is a richer workspace for human–agent design iteration, inspired by
 
 The package and executable are **designbench**. Project files stay in `.design-workbench/`; the older `design-workbench` executable remains an alias.
 
-> **Early preview · MIT licensed.** Client React previews run through Vite, with source-copied shadcn/ui controls and Lucide icons. Direct Pattern Garden library access, site-indexing requests, and built-in AI orchestration remain planned. npm publication is pending account authentication; the GitHub release install below works independently of npm publication.
+> **Early preview · MIT licensed.** Client React previews run through Vite, with source-copied shadcn/ui controls and Lucide icons. Direct Pattern Garden library access, site-indexing requests, and built-in AI orchestration remain planned. Published on npm as [`designbench`](https://www.npmjs.com/package/designbench).
 
 ## Why we built this
 
@@ -49,22 +49,9 @@ Selecting a design only changes the preview. It does not change application impo
 
 ## Getting started
 
-### Install the GitHub preview
+### Install
 
 In an existing React project:
-
-```sh
-npm install --save-dev https://github.com/nicolaerusan/design-workbench/releases/download/v0.3.0/designbench-0.3.0.tgz
-npx designbench init
-npx designbench add --all
-npx designbench dev
-```
-
-Open `http://127.0.0.1:7070`. Keep the server running, and review generated fixtures for required props, providers, and styles. Commit your lockfile and `.design-workbench/`.
-
-### npm / npx install (pending first registry publication)
-
-Once `designbench` is published to npm, the same flow starts with:
 
 ```sh
 npm install --save-dev designbench
@@ -73,7 +60,11 @@ npx designbench add --all
 npx designbench dev
 ```
 
-For a one-off start, `npx designbench@0.3.0 init` will run the published CLI. A pinned development dependency is recommended for teams. The npm name is not reserved until publication succeeds; do not use these registry commands before the release is announced.
+Open `http://127.0.0.1:7070`. Keep the server running, and review generated fixtures for required props, providers, and styles. Commit your lockfile and `.design-workbench/`.
+
+A pinned development dependency is recommended: your lockfile fixes the exact versions of DesignBench and its dependencies that run, and updates arrive when you choose them. To try it without installing, name a version, as in `npx designbench@0.4.0 init`. A bare `npx designbench` in a project that has not installed it runs whatever is newest, with nothing pinned.
+
+The package name is `designbench`. `design-workbench` is a second command name inside it, not a package of its own; without a local install, `npx design-workbench` would fetch a different package.
 
 ### Try it now from this repository
 
@@ -87,14 +78,14 @@ node cli/index.mjs dev --cwd examples/basic
 
 Open `http://127.0.0.1:7070`. The example includes an imported interactive button with two saved alternatives, Ink and Soft, plus a welcome fixture with property and state controls. Node 20.19+ or 22.12+ is required (Node 21 is excluded).
 
-To use it in another React project before the npm release:
+To use a local checkout in another React project:
 
 ```sh
 # In this repository:
 npm pack
 
 # In your host project:
-npm install --save-dev /absolute/path/to/design-workbench/designbench-0.3.0.tgz
+npm install --save-dev /absolute/path/to/design-workbench/designbench-0.4.0.tgz
 npx designbench init
 npx designbench scan
 npx designbench add 'src/components/Button.tsx#Button'
@@ -124,9 +115,26 @@ Generated fixtures import your real components with an editable `fixtureProps` o
 
 The standalone runner supports client-renderable React components, TypeScript path aliases, and CSS imports. Add your shared CSS and wrappers in `catalog.ts` or individual fixtures. It does not load the host's Vite configuration, framework plugins, or server runtime. Components requiring Next.js server features or other framework-specific behavior should use client fixtures or the host integration below. Files in a host `public/` directory are not served automatically.
 
+Fixtures load one by one. A fixture whose imports fail to build, or throw while loading, is listed under **Needs attention** with the file and the error, and the other previews keep working. Previews can read `process.env`: the runner defines one containing only `NODE_ENV`, which client modules such as `next/link` need in order to load. Your shell's environment variables are not copied into it. Features that need the Next.js server, including `next/image` optimization and route files that fetch data, are not available in the standalone runner.
+
+A `catalog.ts` created by 0.3.0 imports every fixture in one step, so one failing fixture stops them all. To get the behavior above, replace its `import.meta.glob` block with:
+
+```ts
+import { loadPreviews } from 'designbench';
+export const { entries, renderPreview } = await loadPreviews(import.meta.glob('./previews/*.tsx'));
+```
+
 `dev` can start before `init`: it shows a setup page with commands appropriate to the current installation. Run those commands in another terminal and choose **Check setup**. An empty catalog explains how to discover and add components. An already-open page shows restart guidance if the dev server disconnects. A fresh browser navigation while the server is stopped will still show the browser’s connection error; no app code is running to render an empty state.
 
 The dev server binds to `127.0.0.1` and defaults to port 7070 (`--port` changes it). It is a local development tool and executes your fixture imports. Keep setup files in version control so teammates and agents share the same fixtures.
+
+### Updates
+
+`designbench dev` asks the npm registry once a day whether a newer version exists. The terminal and the sidebar then show the version and the command to run. The check requests the package's public metadata and sends nothing about your project.
+
+DesignBench never updates itself. You run the command, so the change goes through your package manager and lockfile. If the version you are running has been deprecated, for example after a security fix, the workbench shows the publisher's message prominently.
+
+Turn the check off with `--no-update-check`, `DESIGNBENCH_NO_UPDATE_CHECK=1`, or `NO_UPDATE_NOTIFIER=1`. It is always off in CI. Changes are listed in the [changelog](./CHANGELOG.md).
 
 ### Work with an AI agent
 
@@ -362,7 +370,7 @@ These are product requirements, not available API methods. The library transport
 - [x] Add agent instructions, saved variant files, automatic discovery, and guarded single-file promotion.
 - [ ] Expand multi-file adoption and shared feedback handoff.
 - [x] Adopt the MIT license.
-- [ ] Complete the first npm registry publication.
+- [x] Publish to the npm registry.
 
 ## Development
 
@@ -373,11 +381,11 @@ npm test
 npm pack --dry-run
 ```
 
-`npm test` compiles the package and checks React rendering, selection URLs, catalog validation, Pattern Garden link safety, CLI argument handling, component discovery, preservation of authored fixtures, and standalone server routes. Browser interaction checks are currently manual. GitHub Actions runs typechecking, tests, and a package dry run.
+`npm test` compiles the package and checks React rendering, selection URLs, catalog validation, Pattern Garden link safety, CLI argument handling, component discovery, preservation of authored fixtures, and standalone server routes. Browser interaction checks are currently manual. GitHub Actions runs typechecking, tests, a package dry run, and an audit of shipped dependencies. [docs/releasing.md](./docs/releasing.md) describes how releases are published.
 
 | File | Purpose |
 | --- | --- |
-| `cli/` | Setup, syntax-based discovery, fixture generation, and the Vite preview runner. |
+| `cli/` | Setup, syntax-based discovery, fixture generation, the Vite preview runner, and the update check. |
 | `examples/basic/` | Runnable project with imported components and comparable designs. |
 | `src/workbench.tsx` | Catalog UI, preview panels, navigation, references, and feedback. |
 | `src/model.ts` | Public data model, selection helpers, URLs, and catalog validation. |
@@ -393,4 +401,4 @@ This project began as the design catalog in Day.new. HomeBase is the first consu
 
 [MIT](./LICENSE). Copied shadcn/ui components retain their [upstream MIT attribution](./src/ui/LICENSE.md).
 
-Version 0.3.0 is an early preview. npm publication is pending account authentication. The GitHub release tarball supports local installation and the npx commands above. See [SECURITY.md](./SECURITY.md) for the local development trust boundary and [release review](./docs/release-review-0.3.0.md) for validation and limitations.
+Version 0.4.0 is an early preview. See [SECURITY.md](./SECURITY.md) for the local development trust boundary and the release channel, the [changelog](./CHANGELOG.md) for what changed, and the [0.3.0 release review](./docs/release-review-0.3.0.md) for validation and limitations.
