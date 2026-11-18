@@ -39,6 +39,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm test
-      - run: npm audit --omit=dev --audit-level=high
+      # High and critical advisories stop the release, except the dated entries in scripts/audit-exceptions.json.
+      - run: node scripts/audit.mjs
       - run: npm audit signatures
       - run: npm publish --access public
