@@ -16,12 +16,27 @@ build, the page reads the build error, with project-relative file paths and a
 source excerpt, from the local server. That request is read-only and, like the
 rest of the server, is not readable from other origins.
 
-Variant promotion is an explicit local CLI operation. It checks the original source
-hash, rejects symlinks and out-of-project paths, and retains a backup. It replaces
-one complete file, so review the proposed diff and host application tests first.
+Variant promotion is an explicit local operation: the `variant promote --apply`
+command, or the **Use … in my app** button in the workbench the CLI serves, which
+names the file it replaces and asks you to confirm. The button calls the local
+preview server, which accepts that request only from the workbench page itself: a
+loopback Host, a matching Origin, and a header other sites cannot send. Either way
+promotion checks the original source hash, rejects symlinks and out-of-project
+paths, and retains a backup. It replaces one complete file, so review the proposed
+diff and host application tests first.
 Variant manifests and fixtures are trusted project files, not an upload format.
 These guards do not protect against a malicious process concurrently modifying
 the checkout. Use version control for recovery.
+
+The workbench page tells the local preview server which component, variant, and
+state it is showing, so that `designbench mcp` can pass that to a coding agent you
+connected. Only names, ids, and file paths are sent, and only to the loopback
+server. `designbench mcp` authenticates with a random token that the server writes
+to a file in your temporary folder, readable by your user account only; requests
+that carry a browser Origin are refused. The MCP server can read the current view,
+change which view is open, and list components. It cannot edit files or promote
+variants. Any process running as your user can read the token, as it can read
+your project.
 
 ## Updates and releases
 
@@ -32,7 +47,8 @@ reads a stable version number and a plain-text deprecation message from it, and
 executes nothing. It never downloads or installs a version; it shows a command
 for you to run. Disable the check with `--no-update-check`,
 `DESIGNBENCH_NO_UPDATE_CHECK=1`, or `NO_UPDATE_NOTIFIER=1`. The browser has no
-endpoint that installs, updates, or writes source.
+endpoint that installs or updates DesignBench. The only endpoint that writes
+source is variant promotion, described above.
 
 The package has no install scripts and works when installed with
 `--ignore-scripts`. Releases are published from GitHub Actions through npm

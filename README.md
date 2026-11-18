@@ -28,20 +28,21 @@ We wanted a small bench beside the product: the real component on one side, seve
 | Shareable selection | URLs preserve component, design, state, and viewport; browser back/forward restores selection. |
 | Components in context | Inspect a component inside registered parent compositions, explore the parent, and follow automatically derived “Contains” links. |
 | Source and usage inspector | Inspect source paths and explicit production-usage evidence. Badges distinguish “Used in app,” “Exploration,” and “Source preview.” |
-| References and feedback | Attach manifest references or save per-design links and notes in browser local storage; remove local notes and export references as JSON. |
+| References | Manifest references (for example from PatternGarden) are listed read-only in the Code tab. |
 | Pattern Garden reference bridge | Convert normalized capture metadata into reference links, retaining capture identity, dates, and limitations. |
 | Coverage and gaps | Display host-supplied inventories of previewed, excluded, and missing source files. |
+| Agent connection (MCP) | `designbench mcp` lets a coding agent read what is open in the workbench, open a view, and list components and gaps. It never edits files. |
 | Adaptable interface | Native controls by default; optional host design-system controls, including shadcn adapters and navigation-preview wrappers. |
 | Responsive navigation | Resizable and collapsible desktop sidebar, saved sidebar width, and a mobile drawer with keyboard containment. |
 
-The current AI workflow uses an external coding agent: edit component source and the manifest, inspect the resulting previews, compare alternatives, and export feedback for another iteration. Live updates come from the standalone runner or the host development server. The CLI scaffolds preview fixtures; it does not generate new component implementations, receive prompts, or automatically deliver feedback to an agent.
+The current AI workflow uses an external coding agent: edit component source and the manifest, inspect the resulting previews, compare alternatives, and describe the next iteration to your agent. Live updates come from the standalone runner or the host development server. The CLI scaffolds preview fixtures; it does not generate new component implementations or receive prompts. With MCP connected, an agent can read what you have open; DesignBench still does not send it feedback on its own.
 
 ## The design loop
 
 1. Open a component and inspect its current implementation, states, and usage.
 2. Keep a new direction as a separate source component and manifest design rather than overwriting the previous idea.
 3. Compare directions in browser panels at the same state and viewport.
-4. Record references and feedback, then iterate with your coding agent.
+4. Describe what to change, then iterate with your coding agent.
 5. Inspect registered parent compositions to understand the surrounding layout.
 6. Adopt a direction in the application's source and update its reviewed usage evidence.
 
@@ -138,9 +139,39 @@ Turn the check off with `--no-update-check`, `DESIGNBENCH_NO_UPDATE_CHECK=1`, or
 
 ### Work with an AI agent
 
-Give your coding agent this request:
+DesignBench is meant to be driven from the coding agent you already use. **Settings** in the workbench is the starting point: choose your agent (Claude, ChatGPT, Cursor, or another), then copy a prompt.
 
-> Read .design-workbench/AGENT.md and inventory.json. Review the discovered components, add preview fixtures for the useful ones, supply representative props and providers, and verify the previews in the browser. Preserve existing design directions and add new alternatives separately.
+- **Populate the workbench** finds every component and builds a finished preview for each: the agent runs `scan --write` and `add`, then replaces each generated draft with sample content, states, and editable properties, and opens each preview to check it renders. The card shows how many component files have a preview and how many are still drafts.
+- **Keep it up to date** rescans after you add or rename components, fills the gaps, and finishes drafts.
+- **Tell your agent about the workbench** is one line for `CLAUDE.md` or `AGENTS.md`, so every session keeps previews current.
+
+The CLI does the mechanical part (discovery and draft fixtures) and the agent does the judgement (realistic props, which states matter, grouping). Generated fixtures are marked `draft: true` and show a **Draft** label in the sidebar until someone finishes them. When the last scan found component files with no preview, the sidebar shows **Coverage & gaps** with the list. The same prompts are exported as `populatePrompt(command)`, `refreshPrompt(command)`, `variantsPrompt(command)`, and `memoryLine(command)`.
+
+#### Connect your agent with MCP
+
+Prompts need no setup. Connecting over MCP adds one thing prompts cannot: your agent can see what you have open, so you can say "make this one more compact" instead of describing it. In **Settings**, switch from **Prompts** to **MCP** for the command or config entry for your agent:
+
+```sh
+# Claude Code, from your project folder
+claude mcp add designbench -- npx designbench mcp
+
+# Codex
+codex mcp add designbench -- npx designbench mcp
+```
+
+Cursor and other agents take an `mcpServers` entry with the same command; Settings writes it out. Settings shows a green dot once an agent has called in.
+
+`designbench mcp` is a small Model Context Protocol server on stdio. It talks to the running `designbench dev` server and offers three tools and three prompts:
+
+| Tool | What it does |
+| --- | --- |
+| `get_current_view` | The component, variant, state, edited properties, and files behind what is open in your workbench tab. |
+| `open_view` | Shows a component, variant, state, or viewport width in your workbench tab, and returns its URL. |
+| `list_components` | Every component with its states and variants, the previews still marked as drafts, and component files without a preview. |
+
+The prompts `populate`, `refresh`, and `variants` are the Settings prompts as commands; in Claude Code they appear as `/mcp__designbench__populate` and so on. `variants` asks for a few directions of the component you have open.
+
+The server never edits files, and has no tool that does. Your agent changes code the way it always does; DesignBench is where you look and choose. If the workbench is not running, the tools say how to start it. See [SECURITY.md](./SECURITY.md) for how the connection is restricted to your own user account.
 
 `entry.designs` holds visual directions; `entry.variants` holds states. The fixture's `render(selection)` selects an implementation and its props. The generated guide explains saved variants, context previews, reference provenance, and production evidence. The CLI works without a model API key; the agent runs in your existing editor or coding environment.
 
@@ -162,9 +193,9 @@ This creates project-owned files:
   variant.json     # Source path, export, identity, and original source hash
 ```
 
-Edit the copied implementation or ask your agent to do so. The standalone runner discovers it automatically. Toggle between the source and alternatives, or choose **Compare variants**. They share state presets, properties, and viewport settings. Commit the whole folder to retain history. Delete a variant folder to remove it from the catalog.
+Edit the copied implementation or ask your agent to do so. The standalone runner discovers it automatically. Above the preview are two separate controls: **Source component** shows your app's code (hover it to see which file it renders), and the **Variant** menu switches to a saved variant or **Compare all side by side**. The menu shows a live thumbnail of each variant at the current state. They share state presets, properties, and viewport settings. Commit the whole folder to retain history. Delete a variant folder to remove it from the catalog.
 
-Every component includes **Create a variant → Copy agent instructions**. The generated `.design-workbench/AGENT.md` explains creation, fixture setup, comparison, and adoption. Selecting a preview does not modify the app. The **Source preview** is the baseline from its source file; production usage is only labeled when a maintainer has supplied reviewed evidence.
+The inspector's **Variants** tab lists each variant with a thumbnail, offers **Use … in my app** for the selected one, and includes **Create a variant → Copy agent instructions**. The generated `.design-workbench/AGENT.md` explains creation, fixture setup, comparison, and adoption. Selecting a preview does not modify the app. The **Source preview** is the baseline from its source file; production usage is only labeled when a maintainer has supplied reviewed evidence.
 
 To adopt a saved direction:
 
@@ -175,6 +206,8 @@ npx designbench variant promote button-a98b195e81b9af25 soft
 # After reviewing the diff and checking the component:
 npx designbench variant promote button-a98b195e81b9af25 soft --apply
 ```
+
+In the standalone dev server, **Use … in my app** in the Variants tab runs the same promotion as `--apply` after a confirmation, then shows the source component with the change. The endpoint behind it only accepts requests from the DesignBench page on a local host. An embedded workbench can pass `variantActions={{ promote }}`; without it, the tab shows the terminal command instead.
 
 Promotion replaces the complete original file, rebases relative imports, and keeps a `before-promotion.*` backup beside the variant. It stops if source changed since creation, the public export disappeared, or a target is a symlink or outside the project. Run your application's checks and review the Git diff after adoption. Use Git or the backup to restore the original. Existing variants then need manual reconciliation against the changed source.
 
@@ -302,13 +335,15 @@ Register `checkout-form` and its `Ready` state first. Context `design` and `stat
 
 **Components** is the project home: a searchable overview with links and lazy hover previews. The project name and breadcrumb return here; component URLs still open the selected preview directly. Empty projects default to Setup.
 
-**Setup** stays at the bottom of the project sidebar. It provides the run, scan, and add commands and a short usage guide. Empty catalogs open Setup automatically; projects without CLI configuration also show the init command. The Setup URL can be bookmarked, and browser Back returns to the previous component.
+**Settings** stays at the bottom of the project sidebar. It explains how to use DesignBench with a coding agent (see [Work with an AI agent](#work-with-an-ai-agent)) and keeps the run, scan, and add commands under **Commands**. Empty catalogs open it automatically as **Setup**; projects without CLI configuration also show the init command. The page URL (`?view=setup`) can be bookmarked, and browser Back returns to the previous component. The sidebar search filters components by name, group, or source path; ⌘K or Ctrl+K focuses it.
 
-The **Properties & states** inspector groups state presets and editable values beside the preview. Collapse it to gain canvas space, or use the docking buttons to stack it below the preview or place it on the right. Drag the divider vertically or horizontally to resize it; arrow keys adjust the focused divider, and double-click resets its size. Position, size, and collapsed state are remembered locally per project. Viewport and Reset live inside the inspector; Share sits beside the component name. Narrow panels automatically stack it below. Changing the layout preserves the running preview; changing a state preset clears property overrides. Edited presets show **Modified**.
+The inspector sits on the right of the preview by default, with three tabs: **Properties** (state presets and editable values), **Code** (the files behind the source component and each variant, plus manifest references and usage contexts), and **Variants** (the saved variants, how to switch your app to one, and how to create one). The open tab is kept when a source edit reloads the page. The layout toggle at the top right of the page places it below the preview or on the right; choosing the active position again hides it to give the canvas the full width. Drag the divider vertically or horizontally to resize it; arrow keys adjust the focused divider, and double-click resets its size. Position and size are remembered locally per project. The **View** menu above the preview holds the viewport width and **Reset preview**, next to the variant picker; Share and Preview sit in the top bar. Narrow panels automatically stack the inspector below. Changing the layout preserves the running preview; changing a state preset clears property overrides. **Preview** opens the component alone in a new tab; embedded browsers that do not support new tabs, such as some editor previews, open it in place.
+
+The **Code** tab groups files by design. The source component lists your app's file and, for generated previews, its fixture in `.design-workbench/previews/`. Each saved variant lists its folder in `.design-workbench/ideas/`: `component.tsx` (the copy you edit), `index.tsx` (its fixture), and `variant.json` (its name and origin). Each file shows its type (a React mark for `.tsx` and `.jsx`, TS/JS badges, braces for JSON). Select a file to read it in the panel, or open it in your editor. The standalone dev server supplies file reading and editor opening; an embedded workbench can pass `sourceAccess={{ read, open }}`, and can describe files explicitly with `design.files` and `entry.fixture`. Without `sourceAccess`, the tab lists paths only.
 
 ### UI foundation
 
-The default UI uses source-copied **shadcn/ui** components with **Lucide** icons. Buttons, inputs, textareas, selects, checkboxes, hover cards, tooltips, collapsibles, and the preview/inspector splitter use these local components. Their source and MIT attribution live in `src/ui`. Namespaced CSS replaces Tailwind utilities so host projects do not need a Tailwind setup. Layout, catalog logic, and host-specific adapters remain ordinary React.
+The default UI uses source-copied **shadcn/ui** components with **Lucide** icons. The Claude, ChatGPT, and Cursor marks in the Settings agent picker are trademarks of their owners, shown only to identify each agent; their path data comes from `@lobehub/icons-static-svg` (MIT) and lives in `src/agent-icons.tsx`. Buttons, inputs, textareas, selects, checkboxes, hover cards, tooltips, tabs, toggle groups, dropdown menus, and the preview/inspector splitter use these local components. Their source and MIT attribution live in `src/ui`. The UI is set in Geist and Geist Mono, bundled in `src/fonts` under the SIL Open Font License; a host that already provides Geist through `--font-geist-sans` keeps its own copy. Namespaced CSS replaces Tailwind utilities so host projects do not need a Tailwind setup. Layout, catalog logic, and host-specific adapters remain ordinary React.
 
 The selected **Trestle** logo is available as editable SVG in `design/brand/designbench.svg`; the other studies remain in that folder.
 
@@ -318,7 +353,7 @@ Pass `controls: WorkbenchControls` to use your own `Button`, `Input`, `Textarea`
 
 Optional `coverage: CoverageItem[]` and `scopeNote` describe your component inventory. The React UI consumes host-provided coverage. The CLI discovers candidates, but does not label them as verified coverage.
 
-Manifest designs and references live in your project files. Browser-created notes are stored under `projectId/componentId/designId` and can be exported as JSON; there is no shared backend or automatic manifest writeback. Remote reference images are not loaded automatically. Use annotation tools supplied by your coding environment; DesignBench does not provide its own drawing or screenshot annotation overlay.
+Manifest designs and references live in your project files; there is no shared backend or automatic manifest writeback. Remote reference images are not loaded automatically. Use annotation tools supplied by your coding environment; DesignBench does not provide its own drawing or screenshot annotation overlay.
 
 ## Pattern Garden
 
@@ -368,11 +403,14 @@ These are product requirements, not available API methods. The library transport
 - [ ] Connect Pattern Garden universal-library search and reference retrieval.
 - [ ] Add site-indexing requests and status tracking.
 - [x] Add agent instructions, saved variant files, automatic discovery, and guarded single-file promotion.
+- [x] Add an MCP server so agents can see and change what is open in the workbench.
 - [ ] Expand multi-file adoption and shared feedback handoff.
 - [x] Adopt the MIT license.
 - [x] Publish to the npm registry.
 
 ## Development
+
+DesignBench previews its own components with itself. `npm run design:dev` opens that workbench at http://127.0.0.1:7074; its fixtures live in `.design-workbench/previews/`, one per component, and render the real source. `npm test` fails if a component file under `src/` has no preview or any preview state fails to render, so add a preview when you add a component.
 
 ```sh
 npm ci
@@ -381,13 +419,14 @@ npm test
 npm pack --dry-run
 ```
 
-`npm test` compiles the package and checks React rendering, selection URLs, catalog validation, Pattern Garden link safety, CLI argument handling, component discovery, preservation of authored fixtures, and standalone server routes. Browser interaction checks are currently manual. GitHub Actions runs typechecking, tests, a package dry run, and an audit of shipped dependencies. [docs/releasing.md](./docs/releasing.md) describes how releases are published.
+`npm test` compiles the package and checks React rendering, selection URLs, catalog validation, Pattern Garden link safety, CLI argument handling, component discovery, preservation of authored fixtures, standalone server routes, and the MCP server over stdio. Browser interaction checks are currently manual. GitHub Actions runs typechecking, tests, a package dry run, and an audit of shipped dependencies. [docs/releasing.md](./docs/releasing.md) describes how releases are published.
 
 | File | Purpose |
 | --- | --- |
 | `cli/` | Setup, syntax-based discovery, fixture generation, the Vite preview runner, and the update check. |
+| `cli/mcp.mjs`, `cli/bridge.mjs` | The MCP server for agents, and the dev server's record of what the workbench is showing. |
 | `examples/basic/` | Runnable project with imported components and comparable designs. |
-| `src/workbench.tsx` | Catalog UI, preview panels, navigation, references, and feedback. |
+| `src/workbench.tsx` | Catalog UI, preview panels, navigation, and references. |
 | `src/model.ts` | Public data model, selection helpers, URLs, and catalog validation. |
 | `src/contexts.tsx` | Parent composition previews and reverse component relationships. |
 | `src/controls.tsx` | shadcn/ui defaults and host control-adapter interfaces. |

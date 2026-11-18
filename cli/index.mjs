@@ -8,7 +8,7 @@ import { checkForUpdate, updateCommand, formatUpdate } from './update.mjs';
 
 const help = `DesignBench
 
-Usage: designbench <init|scan|add|variant|dev> [options]
+Usage: designbench <init|scan|add|variant|dev|mcp> [options]
 
   init            Discover components and create a runnable .design-workbench/.
   scan            Print a JSON component inventory; --write refreshes the saved inventory.
@@ -19,6 +19,8 @@ Usage: designbench <init|scan|add|variant|dev> [options]
   variant promote <component-id> <variant-id> [--apply]
                   Review the source replacement; --apply writes it with a backup.
   dev             Start the standalone local workbench (no Storybook required).
+  mcp             Let a coding agent see and change what is open in the running workbench
+                  (a Model Context Protocol server on stdio; it never edits files).
 
 Options:
   --cwd <directory>       Host project directory (default: current directory).
@@ -48,7 +50,7 @@ try {
   const command = positionals[0];
   if (values.help || !command) console.log(help);
   else {
-    if (!['init', 'scan', 'add', 'variant', 'dev'].includes(command) || positionals.length > (command === 'variant' ? 4 : command === 'add' ? 2 : 1)) throw new Error('Expected init, scan, add, variant, or dev. Use --help.');
+    if (!['init', 'scan', 'add', 'variant', 'dev', 'mcp'].includes(command) || positionals.length > (command === 'variant' ? 4 : command === 'add' ? 2 : 1)) throw new Error('Expected init, scan, add, variant, dev, or mcp. Use --help.');
     if ((values.from || values.name || values.apply) && command !== 'variant' || values.write && command !== 'scan' || values.all && command !== 'add' || (values.port || values['no-update-check']) && command !== 'dev' || values.source && (!['init', 'scan'].includes(command) || values.write))
       throw new Error('Option does not apply to this command. Use --help.');
     const root = path.resolve(values.cwd ?? process.cwd());
@@ -67,6 +69,10 @@ try {
     } else if (command === 'add') {
       if (!!positionals[1] === !!values.all) throw new Error('Use add <file#export> or add --all.');
       console.log(JSON.stringify(await addComponents(root, { id: positionals[1], all: values.all }), null, 2));
+    } else if (command === 'mcp') {
+      // Standard output carries the protocol, so nothing else is printed.
+      const { runMcp } = await import('./mcp.mjs');
+      await runMcp({ cwd: values.cwd });
     } else {
       const port = Number(values.port ?? 7070);
       if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Port must be an integer from 1024 to 65535.');

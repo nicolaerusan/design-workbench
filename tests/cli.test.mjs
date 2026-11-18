@@ -64,6 +64,7 @@ test('init is runnable, add preserves edits, and scan refresh never overwrites a
   assert.equal(added[0].status, 'added');
   const target = path.join(root, added[0].file);
   assert.match(await fs.readFile(target, 'utf8'), /\.\.\/\.\.\/src\/Button\.tsx/);
+  assert.match(await fs.readFile(target, 'utf8'), /"draft": true/);
   await fs.writeFile(target, '// authored fixture');
   const repeated = await addComponents(root, { all: true });
   assert.equal(repeated[0].status, 'preserved');

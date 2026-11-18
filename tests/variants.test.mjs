@@ -6,6 +6,7 @@ import os from 'node:os';
 import { createVariant, promoteVariant } from '../cli/variants.mjs';
 import { initialize } from '../cli/setup.mjs';
 import { withVariants, resolveSelection } from '../dist/index.js';
+import { startDev } from '../cli/dev.mjs';
 
 async function fixture(t) {
   const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'designbench-variants-')));
@@ -82,4 +83,31 @@ test('saved variants share property presets and overrides while keeping the sour
   assert.equal(catalog.renderPreview({ ...selection, design: 'current' }), 'source renderer');
   assert.throws(() => withVariants([entry], () => null, [alternative, alternative]), /Duplicate design/);
   assert.throws(() => withVariants([], () => null, [alternative]), /unknown component/);
+});
+
+test('the dev server switches the app to a variant only for requests from the workbench page', async t => {
+  const { root, original } = await fixture(t);
+  const created = await createVariant(root, options);
+  const variantCode = (await fs.readFile(path.join(root, created.source), 'utf8')).replace('Before', 'After');
+  await fs.writeFile(path.join(root, created.source), variantCode);
+  const server = await startDev(root, { port: 0 });
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.httpServer.address().port}`;
+  const post = (headers, body = { component: 'button', variant: 'soft' }) => fetch(`${base}/__designbench/promote`, { method: 'POST', headers, body: JSON.stringify(body) });
+  const page = { 'Content-Type': 'application/json', 'X-DesignBench': '1', Origin: base };
+  // Other sites cannot send the custom header without a preflight, and their origin never matches.
+  assert.equal((await post({ 'Content-Type': 'text/plain', Origin: base })).status, 403);
+  assert.equal((await post({ ...page, Origin: 'https://untrusted.example' })).status, 403);
+  assert.equal((await fetch(`${base}/__designbench/promote`)).status, 405);
+  assert.equal(await fs.readFile(path.join(root, 'src/Button.tsx'), 'utf8'), original);
+  const applied = await post(page);
+  assert.equal(applied.status, 200);
+  assert.deepEqual(Object.keys(await applied.json()).sort(), ['backup', 'status', 'target']);
+  assert.match(await fs.readFile(path.join(root, 'src/Button.tsx'), 'utf8'), /After/);
+  // The guard still applies: the source no longer matches the version the variant started from.
+  const again = await post(page);
+  assert.equal(again.status, 409);
+  assert.match((await again.json()).error, /src\/Button\.tsx has changed since this variant was made/);
+  assert.equal((await post(page, { component: '../x', variant: 'soft' })).status, 409);
+  await server.close();
 });

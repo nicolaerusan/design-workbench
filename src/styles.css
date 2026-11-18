@@ -1,46 +1,61 @@
 @import "./ui.css";
+/* Geist and Geist Mono (SIL OFL 1.1, see fonts/OFL.txt) ship with the package so the UI looks the same in every host. */
+@font-face { font-family: 'DesignBench Geist'; src: url('./fonts/Geist-Variable.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'DesignBench Geist Mono'; src: url('./fonts/GeistMono-Variable.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+/* Popovers render outside the workbench, so they define the stacks too. A host's own Geist (next/font) takes precedence. */
+.dw-workbench, .dw-hover-preview, .db-select-content, .db-tooltip, .db-menu-content {
+  --dw-font-sans: var(--font-geist-sans, 'DesignBench Geist'), 'DesignBench Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --dw-font-mono: var(--font-geist-mono, 'DesignBench Geist Mono'), 'DesignBench Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+}
 .dw-workbench {
   --dw-bg: #fff;
   --dw-line: #e8e8e6;
   --dw-ink: #20201e;
   --dw-muted: #73736e;
+  --dw-topbar-height: 52px;
   display: flex;
+  box-sizing: border-box;
   min-height: 100vh;
   background: var(--dw-bg);
   color: var(--dw-ink);
-  font: 13px/1.5 var(--font-geist-sans, -apple-system), BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font: 13px/1.5 var(--dw-font-sans);
 }
 .dw-workbench * { box-sizing: border-box; }
+.dw-workbench :is(code, pre, samp) { font-family: var(--dw-font-mono); }
 .dw-workbench button, .dw-workbench input, .dw-workbench textarea, .dw-workbench select { font: inherit; }
 .dw-workbench button, .dw-workbench a, .dw-workbench select { touch-action: manipulation; }
 .dw-workbench button { cursor: pointer; }
 .dw-workbench :is(button,a,input,select,textarea,summary):focus-visible { outline: 2px solid #73736e; outline-offset: 3px; }
-.dw-workbench button, .dw-workbench select {
+/* A base for unstyled buttons (Radix triggers, host controls). shadcn buttons keep their own variant styles from ui.css. */
+.dw-workbench button:where(:not(.db-button)), .dw-workbench select {
   display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  min-height: 36px; height: auto; border: 1px solid var(--dw-line); border-radius: 999px;
+  min-height: 36px; height: auto; border: 1px solid var(--dw-line); border-radius: 8px;
   background: white; color: var(--dw-ink); padding: 7px 12px;
-  font-size: 12px; font-weight: 500; box-shadow: none;
+  font-size: 13px; font-weight: 500; box-shadow: none;
   transition: background-color 140ms, border-color 140ms, color 140ms;
 }
-.dw-workbench button:hover, .dw-workbench select:hover { background: #f3f3f1; }
-.dw-workbench button:active { background: #eaeae7; }
-.dw-workbench button[data-variant='ghost'] { background: transparent; border-color: transparent; }
-.dw-workbench button[data-variant='ghost']:hover { background: #f0f0ee; }
-.dw-workbench button[data-variant='default'] { background: #252523; color: #fff; border-color: #252523; }
-.dw-workbench button[data-variant='default']:hover { background: #41413d; }
+.dw-workbench button:where(:not(.db-button)):hover, .dw-workbench select:hover { background: #f3f3f1; }
+.dw-workbench button:where(:not(.db-button)):active { background: #eaeae7; }
 .dw-workbench button:disabled { opacity: .45; cursor: default; }
 .dw-workbench a { color: inherit; text-decoration: none; }
 .dw-sidebar {
   width: min(var(--dw-sidebar-width, 244px), calc(100vw - 360px)); flex-shrink: 0; position: sticky; top: 0; height: 100dvh;
   display: flex; flex-direction: column; background: #fafaf9;
-  border-right: 1px solid var(--dw-line); padding: 20px 12px 14px;
+  border-right: 1px solid var(--dw-line); padding: 0 12px 14px;
 }
 .dw-brand { display: flex; gap: 10px; align-items: center; padding: 0 8px 24px; font-size: 14px; font-weight: 600; letter-spacing: -.3px; }
 .dw-brand small { display: block; font-size: 11px; color: var(--dw-muted); font-weight: 400; letter-spacing: 0; margin-top: 1px; }
 .dw-brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #deded9; background: white; border-radius: 10px; }
 .dw-brand-mark svg { width: 19px; height: 19px; }
 .dw-search { position: relative; display: block; }
-.dw-search input { width: 100%; height: 38px; border: 1px solid #e0e0dc; border-radius: 999px; background: white; padding: 9px 64px 9px 14px; box-shadow: none; font-size: 12px; }
+.dw-search input { width: 100%; height: 36px; border: 1px solid #e0e0dc; border-radius: 999px; background: white; padding: 0 56px 0 34px; box-shadow: none; font-size: 13px; }
+.dw-search input::placeholder { color: transparent; }
+.dw-search-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; color: #8a8a83; font-size: 13px; pointer-events: none; }
+.dw-search-hint svg { flex-shrink: 0; }
+/* Focused or filled, the icon moves to the start like a native search field. */
+.dw-search:focus-within .dw-search-hint, .dw-search:has(input:not(:placeholder-shown)) .dw-search-hint { justify-content: flex-start; }
+.dw-search:has(input:not(:placeholder-shown)) .dw-search-hint > span { visibility: hidden; }
 .dw-search-shortcut { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); opacity: 0; pointer-events: none; transition: opacity 120ms; }
 .dw-search:focus-within .dw-search-shortcut { opacity: 1; }
 @media (hover: hover) { .dw-search:hover .dw-search-shortcut { opacity: 1; } }
@@ -49,35 +64,21 @@
 .dw-nav section { margin: 17px 0 22px; }
 .dw-nav h2 { display: flex; justify-content: space-between; font-size: 11px; font-weight: 500; color: #85857e; padding: 0 10px; margin: 0 0 6px; }
 .dw-nav h2 span { opacity: .7; }
-.dw-nav a { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: 10px; min-height: 36px; padding: 8px 10px; font-size: 14px; line-height: 20px; margin: 1px 0; }
-.dw-nav a span { opacity: 0; }
+.dw-nav a { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-radius: 8px; min-height: 34px; padding: 7px 10px; font-size: 13px; line-height: 20px; margin: 1px 0; }
 .dw-nav a:hover { background: #efefec; }
 .dw-nav a[aria-current] { background: #e9e9e5; color: #20201e; font-weight: 500; }
-.dw-nav a[aria-current] span { opacity: 1; font-size: 10px; }
 .dw-workbench .dw-coverage-button { margin-top: 12px; justify-content: space-between; border-top: 1px solid var(--dw-line); border-radius: 10px; }
 .dw-coverage-button span { color: var(--dw-muted); }
-.dw-sidebar-footer { font-size: 10px; color: #8a8a83; padding: 10px 10px 0; }
 .dw-nav-collapsed .dw-sidebar { display: none; }
 .dw-main { flex: 1; min-width: 0; }
-.dw-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 22px 32px 20px; }
-.dw-header > div { flex: 1; min-width: 0; }
-.dw-workbench .dw-menu { display: inline-flex; width: 34px; min-height: 34px; padding: 7px; border: 0; border-radius: 10px; margin: -5px 9px 0 -7px; vertical-align: middle; }
+.dw-header { flex-shrink: 0; padding: 20px 24px 18px; }
+.dw-header h1 { margin: 0; font-size: 24px; font-weight: 500; line-height: 1.25; letter-spacing: -.6px; }
 .dw-eyebrow { font-size: 12px; color: var(--dw-muted); }
 .dw-eyebrow > span { margin: 0 8px; color: #c1c1ba; }
-.dw-header h1 { font-size: 26px; font-weight: 500; line-height: 1.25; letter-spacing: -.8px; margin: 19px 0 7px; }
-.dw-header p { margin: 0; color: var(--dw-muted); max-width: 660px; font-size: 12px; line-height: 1.65; }
-.dw-open { display: inline-flex; align-items: center; gap: 7px; flex-shrink: 0; border: 1px solid var(--dw-line); border-radius: 999px; padding: 8px 12px; font-size: 12px; background: white; }
-.dw-open:hover { background: #f5f5f3; }
-.dw-designs { padding: 0 32px 14px; }
+.dw-header p { margin: 6px 0 0; color: var(--dw-muted); max-width: 720px; font-size: 13px; line-height: 1.55; }
 .dw-section-label { font-size: 11px; font-weight: 500; margin-bottom: 10px; color: var(--dw-muted); }
 .dw-section-label > span { font-weight: 400; margin-left: 8px; color: #9b9b94; }
-.dw-designs > .dw-section-label { display: none; }
-.dw-design-list { display: flex; flex-wrap: wrap; gap: 7px; padding: 3px 0; }
-.dw-workbench .dw-design-choice { display: inline-flex; flex: 0 1 auto; gap: 8px; text-align: left; padding: 8px 12px; border: 1px solid var(--dw-line); white-space: normal; }
-.dw-workbench .dw-design-choice[aria-pressed='true'] { border-color: #242421; background: #242421; color: white; }
-.dw-design-choice strong { font-size: 12px; font-weight: 500; }
-.dw-status { display: inline-block; white-space: nowrap; padding: 2px 6px; font-size: 9px; line-height: 1.5; border-radius: 999px; font-weight: 500; background: #f0f0ed; color: #72726b; }
-.dw-design-choice[aria-pressed='true'] .dw-status { background: #ffffff1a; color: #e5e5df; }
+.dw-status { display: inline-block; white-space: nowrap; padding: 1px 7px; font-size: 11px; line-height: 1.5; border-radius: 999px; font-weight: 500; background: #f0f0ed; color: #72726b; }
 .dw-production, .dw-previewed { color: #366750; background: #eaf2ec; }
 .dw-excluded { background: #fff2dc; color: #946426; }
 .dw-missing { background: #fde8e9; color: #b3414c; }
@@ -86,65 +87,43 @@
 .dw-toolbar-field > span { font-size: 11px; color: var(--dw-muted); }
 .dw-toolbar-spacer { flex: 1; }
 .dw-toolbar button[aria-pressed='true'] { background: #eaeae6; }
-.dw-preview-caption { display: flex; align-items: baseline; gap: 12px; padding: 0 32px 11px; font-size: 11px; color: var(--dw-muted); }
-.dw-preview-caption > span:first-child { color: #41413a; font-weight: 500; flex-shrink: 0; }
-.dw-preview-caption > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .dw-previews { padding: 0 32px 22px; display: grid; gap: 16px; }
 .dw-compare { grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); }
 .dw-preview-card { border: 1px solid var(--dw-line); border-radius: 16px; overflow: hidden; background: white; box-shadow: 0 3px 18px #20202003; min-width: 0; }
-.dw-frame-title { padding: 11px 16px; border-bottom: 1px solid var(--dw-line); display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+.dw-frame-title { padding: 11px 16px; border-bottom: 1px solid var(--dw-line); display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 500; }
 .dw-canvas { overflow: auto; background: #f5f5f2; }
 .dw-canvas iframe { display: block; border: 0; background: white; height: max(480px, calc(100dvh - 325px)); min-width: 0; margin: auto; max-width: none; }
-.dw-inspector { margin: 0 32px 32px; border-top: 1px solid var(--dw-line); }
-.dw-inspector > summary { cursor: pointer; padding: 15px 0; font-size: 12px; font-weight: 500; }
-.dw-inspector > summary > span { font-size: 11px; font-weight: 400; color: var(--dw-muted); margin-left: 14px; }
-.dw-details { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; padding: 12px 0 20px; }
-.dw-details code { font: 11px/1.8 ui-monospace, SFMono-Regular, monospace; overflow-wrap: anywhere; color: #62625a; }
-.dw-details h3 { font-size: 12px; margin: 18px 0 6px; font-weight: 600; }
+.dw-details code { font: 12px/1.7 var(--dw-font-mono); overflow-wrap: anywhere; color: #62625a; }
+.dw-details h3 { font-size: 13px; margin: 18px 0 6px; font-weight: 600; }
 .dw-details ul { list-style: none; margin: 0; padding: 0; }
 .dw-details li { margin: 8px 0; }
 .dw-details li p { font-size: 12px; color: var(--dw-muted); margin: 4px 0; }
 .dw-note { font-size: 12px; color: var(--dw-muted); line-height: 1.65; }
-.dw-references form { display: flex; flex-direction: column; gap: 12px; }
-.dw-references label { font-size: 11px; color: var(--dw-muted); display: flex; flex-direction: column; gap: 5px; }
-.dw-references input, .dw-references textarea { width: 100%; border: 1px solid var(--dw-line); border-radius: 12px; padding: 9px 12px; background: white; color: var(--dw-ink); font-size: 12px; resize: vertical; box-shadow: none; }
-.dw-references button { font-size: 11px; margin-right: 6px; }
 .dw-references a { text-decoration: underline; text-underline-offset: 3px; font-weight: 500; }
 .dw-coverage { padding: 10px 32px 32px; }
 .dw-coverage h2 { font-size: 20px; font-weight: 500; }
 .dw-coverage > p { color: var(--dw-muted); }
 .dw-coverage ul { list-style: none; padding: 0; }
 .dw-coverage li { padding: 12px 0; border-bottom: 1px solid var(--dw-line); }
-.dw-coverage code { font-size: 11px; margin-left: 10px; overflow-wrap: anywhere; }
-.dw-coverage li p { font-size: 11px; margin: 6px 0 0; color: var(--dw-muted); }
+.dw-coverage code { font-size: 12px; margin-left: 10px; overflow-wrap: anywhere; }
+.dw-coverage li p { font-size: 12px; margin: 6px 0 0; color: var(--dw-muted); }
 .dw-empty { padding: 22px; color: var(--dw-muted); }
 .dw-copy-error { padding: 0 32px; font-size: 12px; color: #965332; }
 .dw-workbench .dw-scrim { display: none; }
 .dw-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (max-width: 1000px) {
-  .dw-sidebar { padding-inline: 10px; }
-  .dw-header { padding: 20px 24px; }
-  .dw-header h1 { font-size: 24px; }
-  .dw-designs, .dw-preview-caption { padding-inline: 24px; }
   .dw-toolbar { margin-inline: 24px; }
   .dw-previews { padding-inline: 24px; }
-  .dw-inspector { margin-inline: 24px; }
-  .dw-details { grid-template-columns: 1fr; gap: 20px; }
 }
 @media (max-width: 700px) {
   .dw-sidebar, .dw-nav-collapsed .dw-sidebar { display: none; }
   .dw-sidebar.dw-sidebar-open { display: flex; position: fixed; z-index: 50; width: min(296px, 82vw); height: 100dvh; top: 0; left: 0; box-shadow: 12px 0 40px #00000014; }
   .dw-workbench .dw-scrim { display: block; position: fixed; z-index: 40; inset: 0; width: 100%; height: 100%; border: 0; border-radius: 0; background: #0005; }
-  .dw-header { padding: 18px 16px; gap: 12px; flex-wrap: wrap; }
-  .dw-header h1 { margin-top: 15px; }
-  .dw-designs, .dw-preview-caption { padding-inline: 16px; }
   .dw-toolbar { margin-inline: 16px; gap: 6px; }
   .dw-toolbar-field { margin-right: 0; }
   .dw-toolbar-field > span { display: none; }
   .dw-toolbar-spacer { display: none; }
   .dw-previews { padding-inline: 12px; }
-  .dw-inspector { margin-inline: 16px; }
-  .dw-inspector > summary > span { display: none; }
   .dw-canvas iframe { height: 570px; }
   .dw-coverage { padding: 16px; }
   .dw-nav a, .dw-workbench button { min-height: 40px; }
@@ -159,12 +138,12 @@
 .dw-workbench .dw-context-choice { display: flex; align-items: flex-start; justify-content: flex-start; flex-direction: column; white-space: normal; text-align: left; border-radius: 14px; padding: 14px; gap: 6px; }
 .dw-context-choice strong { font-size: 13px; font-weight: 500; }
 .dw-context-choice span { font-size: 12px; color: var(--dw-muted); font-weight: 400; }
-.dw-context-choice small { font-size: 10px; color: var(--dw-muted); font-weight: 400; }
+.dw-context-choice small { font-size: 11px; color: var(--dw-muted); font-weight: 400; }
 .dw-workbench .dw-context-choice[aria-pressed='true'] { border-color: #57574e; background: #f6f6f3; }
 .dw-context-preview { margin-top: 14px; }
 .dw-context-preview .dw-frame-title { flex-wrap: wrap; gap: 8px; }
 .dw-context-preview .dw-canvas iframe { height: 560px; }
-.dw-contexts .dw-context-evidence { margin: 0; padding: 12px 16px; font-size: 11px; border-top: 1px solid var(--dw-line); }
+.dw-contexts .dw-context-evidence { margin: 0; padding: 12px 16px; font-size: 12px; border-top: 1px solid var(--dw-line); }
 .dw-context-evidence code { overflow-wrap: anywhere; }
 .dw-context-children { margin-top: 20px; }
 .dw-context-children > div { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -190,7 +169,7 @@
 .dw-property-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 16px; margin-top: 18px; }
 .dw-property { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
 .dw-property-label { font-size: 12px; }
-.dw-property-label code { color: var(--dw-muted); font-size: 10px; margin-left: 5px; }
+.dw-property-label code { color: var(--dw-muted); font-size: 11px; margin-left: 5px; }
 .dw-property input:not([type=checkbox]) { width: 100%; padding: 8px 10px; min-height: 36px; border: 1px solid var(--dw-line); border-radius: 8px; background: white; color: var(--dw-ink); }
 .dw-toggle { display: flex; gap: 8px; align-items: center; min-height: 36px; }
 .dw-toggle input { accent-color: #252523; width: 17px; height: 17px; }
@@ -209,87 +188,60 @@
 
 /* Portaled so sidebar scrolling never clips the quick preview. */
 .dw-nav-preview-anchor { display: block; }
-.dw-hover-preview { position: fixed; z-index: 100; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e5e5e1; border-radius: 14px; background: white; color: #20201e; box-shadow: 0 12px 40px #0000001c; font: 12px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+.dw-hover-preview { position: fixed; z-index: 100; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #e5e5e1; border-radius: 14px; background: white; color: #20201e; box-shadow: 0 12px 40px #0000001c; font: 13px/1.5 var(--dw-font-sans); }
 .dw-hover-preview, .dw-hover-preview * { box-sizing: border-box; }
 .dw-hover-preview header { padding: 12px 14px; flex-shrink: 0; border-bottom: 1px solid #eeeeeb; }
 .dw-hover-preview strong { display: block; font-size: 13px; font-weight: 600; }
-.dw-hover-preview p { margin: 3px 0 0; font-size: 11px; line-height: 1.5; color: #73736e; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.dw-hover-preview p { margin: 3px 0 0; font-size: 12px; line-height: 1.5; color: #73736e; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .dw-hover-canvas { position: relative; height: 210px; min-height: 0; flex: 1 1 210px; overflow: hidden; background: #fafaf9; }
 .dw-hover-canvas iframe { position: absolute; left: 0; top: 0; border: 0; background: white; transform-origin: top left; pointer-events: none; }
 .dw-hover-loading { position: absolute; inset: 0; display: grid; place-content: center; padding: 24px; text-align: center; color: #8a8a83; font-size: 11px; }
-.dw-hover-preview footer { flex-shrink: 0; padding: 9px 14px; border-top: 1px solid #eeeeeb; font-size: 10px; color: #73736e; }
+.dw-hover-preview footer { flex-shrink: 0; padding: 9px 14px; border-top: 1px solid #eeeeeb; font-size: 11px; color: #73736e; }
 
 
 /* The canvas and inspector share all remaining app space. */
 .dw-workbench { height: 100dvh; min-height: 0; overflow: hidden; }
 .dw-main { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
-.dw-header { flex-shrink: 0; padding: 18px 24px 16px; }
-.dw-title-row { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin: 14px 0 7px; flex-wrap: wrap; }
-.dw-title-row h1 { margin: 0; }
-.dw-title-actions { display: flex; align-items: center; gap: 8px; }
-.dw-designs { flex-shrink: 0; padding: 0 24px 12px; }
-.dw-workbench .dw-compare-toggle { margin-left: auto; }
 .dw-workspace-container { flex: 1; min-height: 0; margin: 0; }
 .dw-preview-workspace { height: 100%; overflow: hidden; border-top: 1px solid var(--dw-line); }
 .dw-preview-stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: auto; padding: 16px; }
-.dw-preview-stage .dw-preview-caption { padding: 0 0 12px; flex-shrink: 0; }
 .dw-preview-stage .dw-previews { padding: 0; flex: 1; min-height: 120px; }
 .dw-preview-stage .dw-preview-card { display: flex; flex-direction: column; border-radius: 8px; }
 .dw-preview-stage .dw-canvas { flex: 1; min-height: 120px; }
 .dw-preview-stage .dw-canvas iframe { height: 100%; min-height: 120px; }
 .dw-controls-panel { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #fafaf9; overflow: hidden; }
-.dw-controls-header { display: flex; align-items: center; gap: 4px; padding: 6px 10px; flex-shrink: 0; }
-.dw-workbench .dw-controls-toggle { flex: 1; justify-content: flex-start; min-width: 0; border-radius: 6px; text-align: left; flex-wrap: wrap; gap: 6px; }
-.dw-controls-toggle strong { font-size: 12px; font-weight: 600; }
-.dw-controls-summary { font-size: 11px; color: var(--dw-muted); overflow-wrap: anywhere; }
-.dw-dock-choices { display: flex; flex-shrink: 0; gap: 2px; }
-.dw-workbench .dw-dock-choices button { padding: 6px; min-height: 30px; width: 30px; border-radius: 6px; }
-.dw-workbench .dw-dock-choices button[aria-pressed=true] { background: #e9e9e5; }
-.dw-controls-body { overflow: auto; min-height: 0; flex: 1; padding: 0 16px 16px; }
-.dw-controls-body[hidden] { display: none; }
-.dw-inspector-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; padding: 12px 0; border-top: 1px solid var(--dw-line); }
-.dw-inspector-tools label { display: flex; align-items: center; gap: 8px; font-size: 12px; }
-.dw-state-preset { padding: 12px 0 16px; border-top: 1px solid var(--dw-line); border-bottom: 1px solid var(--dw-line); margin-bottom: 16px; }
+.dw-controls-body { overflow: auto; min-height: 0; flex: 1; padding: 16px; }
+.dw-state-preset { padding: 0 0 16px; border-bottom: 1px solid var(--dw-line); margin-bottom: 16px; }
 .dw-state-preset label { display: flex; align-items: center; gap: 12px; font-size: 12px; font-weight: 500; }
-.dw-state-preset p { margin: 8px 0 0; font-size: 11px; color: var(--dw-muted); }
+.dw-state-preset p { margin: 8px 0 0; font-size: 12px; color: var(--dw-muted); }
 .dw-controls-panel .dw-properties { border: 0; border-radius: 0; padding: 0; margin: 0; }
 .dw-controls-panel .dw-props-empty { margin: 0; }
-.dw-controls-panel .dw-properties-heading button { white-space: nowrap; font-size: 11px; padding: 5px 8px; }
+.dw-controls-panel .dw-properties-heading button { white-space: nowrap; font-size: 12px; padding: 5px 8px; }
 .dw-controls-panel .dw-property-grid { margin-top: 12px; }
-.dw-dock-right .dw-controls-summary { flex-basis: 100%; padding-left: 15px; }
 .dw-dock-right .dw-property-grid { grid-template-columns: 1fr; }
 .dw-dock-right .dw-properties-heading { flex-wrap: wrap; gap: 6px; }
-.dw-controls-collapsed .dw-controls-panel { border-top: 1px solid var(--dw-line); }
-.dw-main > .dw-inspector { flex-shrink: 0; max-height: 35%; overflow: auto; margin: 0; padding: 0 24px; }
-.dw-main > .dw-inspector > summary { padding: 10px 0; }
 .dw-coverage { overflow: auto; min-height: 0; }
 @media (max-width: 700px) {
-  .dw-header { padding: 12px 16px; }
+  .dw-header { padding: 14px 16px; }
+  .dw-header h1 { font-size: 20px; }
   .dw-header p { display: none; }
-  .dw-title-row { margin-top: 10px; }
-  .dw-title-row h1 { font-size: 20px; }
-  .dw-title-actions { gap: 4px; flex-wrap: wrap; }
-  .dw-title-actions .dw-open { font-size: 11px; padding: 6px 8px; }
   .dw-preview-stage { padding: 10px; }
-  .dw-controls-summary { display: none; }
 }
 
 /* shadcn resizable groups own panel geometry and pointer/keyboard behavior. */
 .dw-preview-workspace.db-resizable-group { display: flex; border-top: 1px solid var(--dw-line); }
 .dw-preview-workspace .dw-preview-stage, .dw-preview-workspace .dw-controls-panel { height: 100%; }
 .dw-hidden-handle { display: none; }
-.dw-workbench .dw-source-trigger { display: flex; justify-content: flex-start; gap: 8px; width: 100%; border: 0; border-radius: 0; padding: 10px 0; background: transparent; text-align: left; }
-.dw-source-trigger > span { font-size: 11px; color: var(--dw-muted); margin-left: 8px; }
-.dw-source-trigger[data-state=open] > svg { transform: rotate(90deg); }
 .dw-hover-preview.db-hover-card { position: relative; width: 344px; max-width: calc(100vw - 24px); max-height: var(--radix-hover-card-content-available-height); }
 .dw-workbench .db-select-trigger { justify-content: space-between; gap: 10px; }
 
-.dw-brand { gap: 10px; padding-bottom: 22px; }
+/* The brand row and the page top bar form one band of equal height. */
+.dw-brand { gap: 10px; height: var(--dw-topbar-height); margin: 0 -12px 12px; padding: 0 20px; border-bottom: 1px solid var(--dw-line); flex-shrink: 0; }
 .dw-brand-mark { flex-shrink: 0; border: 0; background: transparent; border-radius: 0; width: 24px; height: 28px; }
 .dw-brand-mark svg { width: 24px; height: 24px; }
 .dw-project-name { min-width: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; line-height: 1.4; }
 .dw-nav { margin-top: 8px; }
-.dw-setup-link { display: flex; align-items: center; gap: 9px; flex-shrink: 0; min-height: 36px; padding: 8px 10px; margin-top: 8px; border-radius: 8px; font-size: 12px; }
+.dw-setup-link { display: flex; align-items: center; gap: 9px; flex-shrink: 0; min-height: 36px; padding: 8px 10px; margin-top: 8px; border-radius: 8px; font-size: 13px; }
 .dw-setup-link:hover, .dw-setup-link[aria-current] { background: #e9e9e5; }
 .dw-setup-content { overflow: auto; flex: 1; min-height: 0; padding: 12px 24px 32px; }
 .dw-setup-content .dw-setup-card { max-width: 620px; }
@@ -300,12 +252,11 @@
 .dw-setup-card li { margin: 0; padding: 0; }
 .dw-setup-card pre { margin: 7px 0; padding: 11px 14px; background: #f7f7f5; border: 1px solid var(--dw-line); border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
 .dw-setup-usage { padding-top: 18px; border-top: 1px solid var(--dw-line); }
-.dw-setup-card .dw-setup-note { margin: 18px 0; font-size: 11px; }
+.dw-setup-card .dw-setup-note { margin: 18px 0; font-size: 12px; }
 .dw-setup { overflow: auto; }
 @media (max-width: 700px) { .dw-setup-content { padding-inline: 16px; } }
 
-.dw-breadcrumb { display: inline-flex; max-width: calc(100% - 45px); vertical-align: middle; }
-.dw-nav .dw-all-components { justify-content: flex-start; gap: 9px; margin-top: 8px; font-size: 12px; }
+.dw-nav .dw-all-components { justify-content: flex-start; gap: 9px; margin-top: 8px; font-size: 13px; }
 .dw-component-overview { flex: 1; min-height: 0; overflow: auto; padding: 10px 24px 32px; }
 .dw-overview-group { margin-bottom: 28px; }
 .dw-overview-group h2 { font-size: 12px; font-weight: 500; color: var(--dw-muted); margin: 0 0 12px; }
@@ -316,14 +267,9 @@
 .dw-component-tile-title strong { font-size: 14px; font-weight: 600; }
 .dw-component-tile-title svg { color: var(--dw-muted); flex-shrink: 0; }
 .dw-component-tile p { color: var(--dw-muted); font-size: 12px; line-height: 1.6; margin: 8px 0 18px; flex: 1; }
-.dw-component-tile code { font-size: 10px; color: #8a8a83; overflow-wrap: anywhere; }
+.dw-component-tile code { font-size: 11px; color: #8a8a83; overflow-wrap: anywhere; }
 @media (max-width: 700px) { .dw-component-overview { padding-inline: 16px; } }
 
-.dw-variant-guide { flex: 0 0 auto; border-bottom: 1px solid var(--dw-border, #e4e4e7); }
-.dw-variant-instructions { padding: 0 24px 18px; max-height: 300px; overflow: auto; font-size: 13px; }
-.dw-variant-instructions p { line-height: 1.6; max-width: 85ch; }
-.dw-variant-instructions pre { white-space: pre-wrap; overflow-wrap: anywhere; }
-.dw-agent-prompt { color: #71717a; font-size: 12px; overflow-wrap: anywhere; }
 
 /* Sidebar groups collapse; the chevron and count stay out of the way until hover or focus. */
 .dw-nav h2 { display: block; padding: 0; }
@@ -339,16 +285,7 @@
 .dw-nav section { margin: 12px 0 14px; }
 .dw-nav h2 { margin-bottom: 2px; }
 
-/* The variant guide shares the header's gutter instead of hugging the sidebar edge. */
-.dw-variant-guide { padding: 0 24px; }
-.dw-variant-instructions { padding: 0 0 18px; }
-@media (max-width: 700px) { .dw-variant-guide { padding: 0 16px; } }
 
-/* Sidebar rows share centre lines with the header: brand with the breadcrumb, search with the title. */
-.dw-sidebar { padding-top: 18px; }
-.dw-brand { padding-bottom: 14px; }
-.dw-title-row { min-height: 36px; }
-.dw-workbench .dw-menu { position: relative; top: 2px; }
 
 /* Overview tiles lead with a live miniature of the default preview. */
 .dw-component-tile { padding: 0; overflow: hidden; }
@@ -357,6 +294,257 @@
 .dw-component-tile-title { padding: 14px 18px 0; }
 .dw-component-tile p { margin: 6px 18px 14px; }
 .dw-component-tile code { padding: 0 18px 16px; }
+
+/* Top bar: one fixed-height row with every item on its centre line. */
+.dw-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: var(--dw-topbar-height); flex-shrink: 0; padding: 0 16px 0 12px; border-bottom: 1px solid var(--dw-line); }
+.dw-topbar-start { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.dw-workbench .dw-menu { width: 32px; height: 32px; min-height: 32px; padding: 0; flex-shrink: 0; color: #5f5f59; }
+.dw-breadcrumb { min-width: 0; }
+.dw-breadcrumb .db-breadcrumb-list { flex-wrap: nowrap; font-size: 13px; }
+.dw-breadcrumb .db-breadcrumb-item { min-width: 0; white-space: nowrap; }
+.dw-breadcrumb .db-breadcrumb-page { overflow: hidden; text-overflow: ellipsis; color: var(--dw-ink); font-weight: 500; }
+/* Only the current page truncates; earlier crumbs and the chevrons keep their size. */
+.dw-breadcrumb .db-breadcrumb-item:not(:last-child), .dw-breadcrumb .db-breadcrumb-separator { flex-shrink: 0; }
+.dw-topbar-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.dw-workbench .dw-topbar-actions > button { height: 32px; min-height: 32px; padding: 0 10px; }
+.dw-open { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px 0 12px; border: 1px solid var(--dw-line); border-radius: 8px; background: white; font-size: 13px; font-weight: 500; }
+.dw-open:hover { background: #f3f3f1; }
+.dw-topbar-divider { width: 1px; height: 20px; margin: 0 4px; background: var(--dw-line); }
+
+/* Segmented view control: the inspector layout. */
+.dw-view-toggle { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 2px; padding: 2px; border: 1px solid var(--dw-line); border-radius: 8px; background: #f5f5f3; }
+.dw-workbench .db-toggle { width: 30px; height: 26px; min-height: 26px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #7a7a73; box-shadow: none; }
+.dw-workbench .db-toggle:hover { background: #ebebe8; color: var(--dw-ink); }
+/* Tooltip triggers overwrite data-state, so selection is read from ARIA. */
+.dw-workbench .db-toggle:is([aria-checked=true],[aria-pressed=true]) { background: white; color: var(--dw-ink); box-shadow: 0 1px 2px #0000001a, 0 0 0 1px #0000000a; }
+
+/* Design picker: the source component and the variant menu are two separate controls, not a toggle. */
+.dw-design-picker { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.dw-workbench .dw-design-choice { gap: 6px; height: 32px; min-height: 32px; padding: 0 10px; border: 1px solid var(--dw-line); border-radius: 8px; background: white; color: #6b6b65; font-size: 13px; font-weight: 500; box-shadow: none; }
+.dw-workbench .dw-design-choice:hover { background: #f5f5f3; color: var(--dw-ink); }
+.dw-design-choice > svg { flex-shrink: 0; color: #9b9b94; }
+.dw-workbench .dw-design-choice:is([aria-pressed=true],[data-active=true]) { border-color: #cfcfc9; background: #f3f3f1; color: var(--dw-ink); }
+.dw-design-choice:is([aria-pressed=true],[data-active=true]) > svg:first-child { color: var(--dw-ink); }
+.dw-workbench .dw-design-variants[data-state=open] { border-color: #cfcfc9; background: #f3f3f1; }
+.dw-design-variant-label { color: var(--dw-muted); font-weight: 400; }
+.dw-design-variant-value { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dw-design-source-tip { display: flex; flex-direction: column; gap: 2px; max-width: 300px; }
+.dw-design-source-tip strong { font-weight: 600; }
+.dw-design-source-tip span { color: #d4d4cf; }
+.dw-design-source-tip code { color: white; font-size: 11px; overflow-wrap: anywhere; }
+
+/* The header leads straight into the preview; its toolbar holds view settings. */
+.dw-stage-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; flex-shrink: 0; min-height: 32px; margin-bottom: 12px; }
+.dw-stage-toolbar-start { display: flex; align-items: center; min-width: 0; }
+.dw-stage-toolbar-end { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+.dw-workbench .dw-stage-toolbar-end > button { height: 32px; min-height: 32px; }
+.dw-workbench .dw-view-menu-trigger { gap: 6px; padding: 0 8px 0 10px; }
+.dw-workbench .dw-view-menu-trigger[data-state=open] { background: #f3f3f1; }
+.dw-view-menu-value { padding: 0 6px; border-radius: 4px; background: #f0f0ed; color: var(--dw-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.dw-view-menu-trigger > svg:last-child { color: #8a8a83; }
+.dw-view-menu .db-menu-item > span { display: flex; flex-direction: column; }
+.dw-view-menu .db-menu-item small { color: #73736e; font-size: 12px; }
+.dw-preview-caption { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; font-weight: 500; }
+
+/* The inspector: tabbed sections in one panel, beside or below the preview. */
+.dw-inspector-tabs { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.dw-workbench .dw-inspector-tablist { display: flex; align-items: stretch; gap: 18px; height: 44px; flex-shrink: 0; padding: 0 16px; border-bottom: 1px solid var(--dw-line); overflow-x: auto; scrollbar-width: none; }
+.dw-workbench .db-tabs-trigger { position: relative; height: auto; min-height: 0; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--dw-muted); font-size: 13px; font-weight: 500; white-space: nowrap; }
+.dw-workbench .db-tabs-trigger:hover { background: transparent; color: var(--dw-ink); }
+.dw-workbench .db-tabs-trigger[data-state=active] { color: var(--dw-ink); }
+.dw-workbench .db-tabs-trigger[data-state=active]::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px; background: var(--dw-ink); }
+.dw-workbench .db-tabs-trigger:focus-visible { outline-offset: -2px; }
+.db-tabs-content[data-state=inactive] { display: none; }
+.dw-dock-below .dw-controls-panel { border-top: 0; }
+.dw-controls-panel h2, .dw-controls-panel .dw-section-label { margin: 0 0 6px; color: var(--dw-ink); font-size: 13px; font-weight: 600; }
+.dw-controls-panel p { font-size: 12px; line-height: 1.6; color: var(--dw-muted); }
+.dw-controls-panel .dw-note { margin: 6px 0 0; }
+.dw-panel-stack { display: flex; flex-direction: column; gap: 18px; }
+.dw-panel-stack > * + * { padding-top: 18px; border-top: 1px solid var(--dw-line); }
+.dw-references ul { list-style: none; margin: 0; padding: 0; }
+.dw-references ul:not(:empty) { margin-bottom: 12px; }
+.dw-panel-stack .dw-contexts { margin: 0; }
+.dw-panel-stack .dw-context-preview .dw-canvas iframe { height: 360px; }
+
+/* Panel dividers are hairlines; the library keeps a wider pointer target. */
+.dw-preview-workspace .db-resizable-handle { width: 1px; background: var(--dw-line); }
+.dw-preview-workspace .db-resizable-handle[data-panel-group-direction=vertical] { width: 100%; height: 1px; }
+.dw-preview-workspace .db-resizable-handle:hover, .dw-preview-workspace .db-resizable-handle[data-resize-handle-active] { background: #a3a39c; }
+
+@media (max-width: 700px) {
+  .dw-topbar { padding: 0 12px 0 8px; gap: 8px; }
+  .dw-topbar-divider { display: none; }
+  .dw-breadcrumb .db-breadcrumb-item:not(:last-child), .dw-breadcrumb .db-breadcrumb-separator { display: none; }
+}
+
+/* Code tab: each design and the files behind it. */
+.dw-code > p { margin: 0 0 14px; }
+.dw-tree, .dw-tree ul { list-style: none; margin: 0; padding: 0; }
+.dw-tree-design + .dw-tree-design { margin-top: 8px; }
+.dw-tree-design-row { display: flex; align-items: center; gap: 6px; min-height: 32px; }
+.dw-workbench .dw-tree-toggle { flex: 1; justify-content: flex-start; gap: 6px; min-width: 0; height: 30px; min-height: 30px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; font-weight: 400; text-align: left; }
+.dw-workbench .dw-tree-toggle:hover { background: #efefec; }
+.dw-tree-toggle > svg { flex-shrink: 0; color: #8a8a83; transition: transform 120ms; }
+.dw-tree-toggle[aria-expanded=true] > svg { transform: rotate(90deg); }
+.dw-tree-toggle strong { font-weight: 600; white-space: nowrap; }
+.dw-tree-toggle > span { overflow: hidden; color: var(--dw-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.dw-tree-showing { flex-shrink: 0; padding: 1px 7px; border-radius: 999px; background: #eaf2ec; color: #366750; font-size: 11px; font-weight: 500; }
+.dw-workbench .dw-tree-preview { flex-shrink: 0; height: 26px; min-height: 26px; padding: 0 8px; font-size: 12px; }
+.dw-tree .dw-tree-children { margin-left: 13px; padding-left: 8px; border-left: 1px solid var(--dw-line); }
+.dw-tree-folder { display: flex; align-items: center; gap: 6px; min-width: 0; height: 26px; padding: 0 6px; color: var(--dw-muted); }
+.dw-tree-folder svg, .dw-tree-file svg { flex-shrink: 0; color: #9b9b94; }
+/* File types: React components, scripts, data, and styles each have their own mark. */
+.dw-tree-file .dw-file-icon-react { color: #087ea4; }
+.dw-tree-file .dw-file-icon-ts { color: #3178c6; }
+.dw-tree-file .dw-file-icon-js { color: #e8c53a; }
+.dw-file-icon-ts .dw-file-icon-label { fill: white; }
+.dw-file-icon-js .dw-file-icon-label { fill: #20201e; }
+.dw-tree-file .dw-file-icon-json { color: #b7791f; }
+.dw-tree-file .dw-file-icon-css { color: #7e57c2; }
+/* Long folder paths keep their meaningful end; the start is elided. */
+.dw-tree-path, .dw-file-view h2 { min-width: 0; overflow: hidden; direction: rtl; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.dw-tree-path { font: 12px/1.4 var(--dw-font-mono); }
+.dw-workbench .dw-tree-file { justify-content: flex-start; gap: 6px; width: 100%; height: 28px; min-height: 28px; padding: 0 6px; border: 0; border-radius: 6px; background: transparent; font-weight: 400; text-align: left; }
+.dw-workbench .dw-tree-file:hover { background: #efefec; }
+.dw-tree-name { min-width: 0; overflow: hidden; font: 12px/1.4 var(--dw-font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.dw-tree-role { flex-shrink: 0; margin-left: auto; padding-left: 8px; color: var(--dw-muted); font-size: 12px; }
+.dw-tree-usage { padding: 6px; font-size: 12px; }
+.dw-tree-usage > span { font-weight: 500; }
+.dw-tree-usage p { margin: 4px 0 0; }
+.dw-tree-usage code { font-size: 11px; overflow-wrap: anywhere; }
+.dw-file-view { display: flex; flex-direction: column; min-height: 100%; }
+.dw-workbench .dw-file-back { align-self: flex-start; gap: 6px; height: 28px; min-height: 28px; margin: -4px 0 10px -8px; padding: 0 8px; }
+.dw-controls-panel .dw-file-view h2 { margin: 0 0 4px; font: 500 12px/1.5 var(--dw-font-mono); }
+.dw-file-view > p { margin: 0 0 10px; }
+.dw-file-view > p strong { color: var(--dw-ink); font-weight: 500; }
+.dw-file-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.dw-workbench .dw-file-actions button { gap: 6px; height: 30px; min-height: 30px; padding: 0 10px; font-size: 12px; }
+.dw-code-view { flex: 1; min-height: 160px; margin: 0; overflow: auto; padding: 10px 0; border: 1px solid var(--dw-line); border-radius: 8px; background: white; color: #2d2d2a; font: 12px/1.6 var(--dw-font-mono); tab-size: 2; counter-reset: line; }
+.dw-code-view code { display: block; min-width: max-content; font: inherit; }
+.dw-code-line { display: block; min-height: 1.6em; padding-right: 14px; white-space: pre; }
+.dw-code-line::before { content: counter(line); counter-increment: line; position: sticky; left: 0; display: inline-block; width: 4ch; margin-right: 12px; padding-right: 8px; background: white; color: #b0b0a9; text-align: right; user-select: none; }
+.dw-file-status { padding: 14px; border: 1px dashed var(--dw-line); border-radius: 8px; }
+
+/* The variant menu: a live thumbnail of each variant at the current state. */
+.dw-workbench .dw-design-variants { padding: 0 8px 0 10px; }
+.dw-design-variants > svg:last-child { color: #8a8a83; }
+.db-menu-content.dw-design-menu { min-width: 240px; max-width: 340px; }
+.dw-design-menu .dw-design-menu-item { gap: 10px; padding-top: 5px; padding-bottom: 5px; }
+.dw-design-menu-text { display: flex; flex-direction: column; min-width: 0; }
+.dw-design-menu-text small { overflow: hidden; color: #73736e; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.dw-design-thumbnail { position: relative; flex-shrink: 0; overflow: hidden; border: 1px solid #e8e8e6; border-radius: 6px; background: #fafaf9; }
+.dw-design-thumbnail-small { width: 72px; height: 44px; }
+.dw-design-thumbnail-medium { width: 84px; height: 52px; }
+.dw-design-thumbnail iframe { position: absolute; left: 0; top: 0; border: 0; background: transparent; transform-origin: top left; pointer-events: none; transition: opacity 160ms; }
+.dw-design-count { min-width: 18px; padding: 0 5px; border-radius: 999px; background: #e7e7e3; color: var(--dw-muted); font-size: 11px; line-height: 16px; text-align: center; }
+.dw-references li + li { margin-top: 8px; }
+.dw-references li p { margin: 2px 0 0; }
+
+/* Variants tab. */
+.dw-variants > p { margin: 0 0 14px; }
+.dw-variants code { font-size: 12px; }
+.dw-variant-list { list-style: none; margin: 0 0 16px; padding: 0; border: 1px solid var(--dw-line); border-radius: 8px; background: white; }
+.dw-variant-list li { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 8px; }
+.dw-variant-list li > div { flex: 1; }
+.dw-variant-list li + li { border-top: 1px solid var(--dw-line); }
+.dw-variant-list li > div { display: flex; flex-direction: column; min-width: 0; }
+.dw-variant-list strong { font-weight: 500; }
+.dw-variant-list li span:not(.dw-tree-showing) { overflow: hidden; color: var(--dw-muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.dw-variants-empty { padding: 12px; border: 1px dashed var(--dw-line); border-radius: 8px; }
+.dw-variant-promotion { margin-bottom: 16px; padding: 12px; border-radius: 8px; background: #f0f0ed; }
+.dw-variant-promotion h3 { margin: 0 0 4px; font-size: 13px; font-weight: 600; }
+.dw-variant-promotion p { margin: 0; }
+.dw-variant-promotion pre { margin: 8px 0; padding: 8px 10px; border-radius: 6px; background: white; font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.dw-variant-promotion code { overflow-wrap: anywhere; }
+.dw-workbench .dw-promote-button { gap: 6px; height: 32px; min-height: 32px; margin-top: 10px; padding: 0 12px; border-color: #20201e; background: #20201e; color: white; }
+.dw-workbench .dw-promote-button:hover:not(:disabled) { background: #3a3a37; }
+.dw-promote-confirm { display: flex; flex-wrap: wrap; gap: 6px; }
+.dw-workbench .dw-promote-confirm > button:not(.dw-promote-button) { height: 32px; min-height: 32px; margin-top: 10px; }
+.dw-controls-panel .dw-promote-error { margin-top: 8px; color: #a1361f; }
+.dw-promoted { display: flex; gap: 8px; margin: 0 0 14px; padding: 10px 12px; border-radius: 8px; background: #eaf2ec; color: #2f5a45; }
+.dw-promoted > svg { flex-shrink: 0; margin-top: 3px; }
+.dw-controls-panel .dw-promoted p { margin: 0; color: inherit; }
+.dw-promoted code { font-size: 11px; overflow-wrap: anywhere; }
+.dw-spin { animation: dw-spin 800ms linear infinite; }
+@keyframes dw-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .dw-spin { animation: none; } }
+.dw-create-variant { border-top: 1px solid var(--dw-line); }
+.dw-workbench .dw-create-variant-trigger { justify-content: flex-start; gap: 6px; width: 100%; height: 40px; min-height: 40px; padding: 0 2px; border: 0; border-radius: 0; background: transparent; font-weight: 600; }
+.dw-workbench .dw-create-variant-trigger:hover { background: transparent; }
+.dw-create-variant-trigger > svg { color: #8a8a83; transition: transform 120ms; }
+.dw-create-variant-trigger[data-state=open] > svg { transform: rotate(90deg); }
+.dw-create-variant-body { padding: 0 0 8px 22px; }
+.dw-create-variant-body p { margin: 0 0 12px; }
+.dw-create-variant-body .dw-agent-prompt { width: 100%; margin-top: 10px; padding: 8px 10px; border: 1px solid var(--dw-line); border-radius: 8px; color: #62625a; font: 12px/1.5 var(--dw-font-mono); resize: vertical; }
+
+/* Settings: choose an agent, then copy a prompt for it. */
+.dw-setup-content .dw-setup-card { max-width: 680px; }
+.dw-setup-card > h2 + p { max-width: 560px; font-size: 13px; }
+.dw-agent-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 18px 0 10px; }
+.dw-agent-picker { display: flex; flex-wrap: wrap; gap: 4px; }
+.dw-workbench .dw-agent-choice { min-height: 34px; padding: 0 14px; border: 1px solid transparent; border-radius: 999px; background: transparent; color: var(--dw-muted); font-size: 13px; font-weight: 500; }
+.dw-workbench .dw-agent-choice:hover { background: #f3f3f1; color: var(--dw-ink); }
+.dw-workbench .dw-agent-choice[data-state=on] { border-color: var(--dw-line); background: white; color: var(--dw-ink); box-shadow: 0 1px 3px #00000014; }
+.dw-setup-card .dw-agent-where { margin: 0 0 18px; font-size: 13px; }
+.dw-prompt-card { margin-bottom: 10px; padding: 14px 16px 8px; border: 1px solid var(--dw-line); border-radius: 12px; background: white; }
+.dw-prompt-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.dw-prompt-card-head > div { min-width: 0; }
+.dw-prompt-card-head p { margin: 4px 0 0; }
+.dw-workbench .dw-copy-button { flex-shrink: 0; gap: 6px; }
+.dw-copy-button svg { width: 14px; height: 14px; }
+.dw-setup-card .dw-coverage-summary { margin-top: 8px; color: var(--dw-ink); }
+.dw-coverage-summary strong { font-weight: 600; }
+.dw-workbench .dw-inline-link { display: inline; min-height: 0; padding: 0; border: 0; border-radius: 2px; background: transparent; color: inherit; font-size: inherit; font-weight: 500; text-decoration: underline; text-underline-offset: 3px; }
+.dw-workbench .dw-inline-link:hover { background: transparent; color: var(--dw-muted); }
+.dw-workbench .dw-prompt-reveal { justify-content: flex-start; gap: 4px; min-height: 28px; margin: 6px 0 0 -4px; padding: 0 4px; border: 0; background: transparent; color: var(--dw-muted); font-size: 12px; font-weight: 400; }
+.dw-workbench .dw-prompt-reveal:hover { background: transparent; color: var(--dw-ink); }
+.dw-prompt-reveal > svg { transition: transform 120ms; }
+.dw-prompt-reveal[data-state=open] > svg { transform: rotate(90deg); }
+.dw-setup-card pre.dw-prompt-text { max-height: 320px; margin: 6px 0 8px; overflow: auto; font-size: 12px; line-height: 1.6; }
+.dw-setup-card .dw-copy-fallback { width: 100%; margin: 10px 0 0; padding: 8px 10px; border: 1px solid var(--dw-line); border-radius: 8px; color: #62625a; font: 12px/1.5 var(--dw-font-mono); resize: vertical; }
+.dw-prompt-card + .dw-setup-usage { margin-top: 22px; }
+.dw-setup-commands { margin-top: 18px; border-top: 1px solid var(--dw-line); }
+.dw-setup-commands ol { margin-top: 14px; }
+@media (max-width: 520px) { .dw-prompt-card-head { flex-direction: column; gap: 10px; } }
+
+/* Generated previews nobody has finished yet. */
+.dw-nav-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dw-nav-draft { flex-shrink: 0; padding: 0 6px; border-radius: 999px; background: #f4ecd9; color: #7a5a12; font-size: 10px; font-weight: 500; line-height: 16px; }
+
+/* Coverage page: the same populate prompt, next to the list of gaps. */
+.dw-coverage-action { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; padding: 12px 14px; border: 1px solid var(--dw-line); border-radius: 12px; background: white; }
+.dw-coverage .dw-coverage-action p { flex: 1 1 260px; margin: 0; }
+.dw-coverage-action strong { color: var(--dw-ink); font-weight: 600; }
+.dw-coverage-action .dw-copy-fallback { flex-basis: 100%; padding: 8px 10px; border: 1px solid var(--dw-line); border-radius: 8px; font: 12px/1.5 var(--dw-font-mono); }
+
+/* Agent marks in the Settings picker: muted until chosen; Claude keeps its own colour. */
+.dw-workbench .dw-agent-choice { gap: 7px; padding: 0 14px 0 11px; }
+.dw-agent-icon { flex-shrink: 0; opacity: .7; }
+.dw-agent-choice[data-state=on] .dw-agent-icon, .dw-agent-choice:hover .dw-agent-icon { opacity: 1; }
+.dw-agent-choice[data-state=on] .dw-agent-icon-claude { color: #D97757; }
+
+/* A tile zoomed to its component shows the preview's own white page around it, not the tile's grey. */
+.dw-tile-thumbnail[data-fitted] { background: white; }
+
+/* Settings: a second choice beside the agent, between pasting prompts and connecting over MCP. */
+.dw-connect-picker { display: inline-flex; padding: 2px; border-radius: 9px; background: #f1f1ee; }
+.dw-workbench .dw-connect-choice { gap: 6px; min-height: 28px; padding: 0 12px; border: 0; border-radius: 7px; background: transparent; color: var(--dw-muted); font-size: 12px; font-weight: 500; }
+.dw-workbench .dw-connect-choice:hover { background: transparent; color: var(--dw-ink); }
+.dw-workbench .dw-connect-choice[data-state=on] { background: white; color: var(--dw-ink); box-shadow: 0 1px 2px #00000018; }
+.dw-mcp-dot { flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: #c9c9c3; }
+.dw-mcp-dot[data-connected] { background: #3f9463; }
+.dw-setup-card .dw-mcp-how { margin: 12px 0 0; }
+.dw-setup-card pre.dw-mcp-code { max-height: 240px; margin: 6px 0 0; overflow: auto; font-size: 12px; line-height: 1.6; }
+.dw-setup-card .dw-mcp-status { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 6px; }
+.dw-mcp-status .dw-mcp-dot { transform: translateY(-1px); }
+.dw-mcp-status strong { color: var(--dw-ink); font-weight: 600; }
+.dw-ask-card { padding-bottom: 12px; }
+.dw-setup-card .dw-ask-list { display: grid; gap: 6px; margin: 10px 0 12px; padding: 0; list-style: none; }
+.dw-ask-list li { width: fit-content; max-width: 100%; padding: 6px 12px; border-radius: 14px 14px 14px 4px; background: #f5f5f2; color: var(--dw-ink); font-size: 13px; line-height: 1.45; }
+.dw-ask-card code { font-size: 11.5px; overflow-wrap: anywhere; }
+
+/* Update notice in the sidebar, and the banner for a deprecated release. */
+.dw-sidebar-footer { flex-shrink: 0; padding: 8px 10px 0; color: #8a8a83; font-size: 11px; }
 .dw-update { flex-shrink: 0; margin-top: 8px; border: 1px solid var(--dw-line); border-radius: 8px; background: var(--dw-bg); font-size: 12px; }
 .dw-workbench .dw-update-trigger { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 36px; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .dw-update-trigger:hover { background: #efefec; }

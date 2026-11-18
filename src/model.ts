@@ -16,12 +16,21 @@ export interface ProductionUsage {
   symbol: string;
   description: string;
 }
+/** A project file behind a preview, shown in the Code tab. Paths are relative to the project root. */
+export interface SourceFile {
+  path: string;
+  /** Short role, such as "App component". */
+  label: string;
+  description?: string;
+}
 export interface DesignIdea {
   kind?: 'exploration' | 'source';
   id: string;
   name: string;
   description?: string;
   source: string;
+  /** Files that make up this design. Saved variants and source designs are inferred when omitted. */
+  files?: SourceFile[];
   /** Maintainer-reviewed source evidence; selecting a design never changes production. */
   productionUsage?: ProductionUsage[];
   references?: DesignReference[];
@@ -34,6 +43,10 @@ export interface WorkbenchEntry {
   description: string;
   variants: string[];
   width: number;
+  /** The file that renders this preview (props, providers, and states), if known. */
+  fixture?: string;
+  /** A generated preview nobody has finished yet: no sample props, states, or review. */
+  draft?: boolean;
   designs?: DesignIdea[];
   contexts?: ComponentContext[];
   propControls?: Record<string, PropControl>;
@@ -77,10 +90,32 @@ export interface Selection {
   /** Validated JSON property overrides, shared with preview URLs. */
   props?: string;
 }
+/** Generated previews are drafts until someone finishes them. Older fixtures are recognised by their placeholder description. */
+export function isDraft(entry: WorkbenchEntry): boolean {
+  return entry.draft === true || entry.draft === undefined && entry.description.startsWith('Draft fixture:');
+}
 export function designsFor(entry: WorkbenchEntry): DesignIdea[] {
   return entry.designs?.length
     ? entry.designs
     : [{ id: 'current', name: 'Source component', source: entry.source }];
+}
+// A saved variant keeps its source file's extension: component.tsx, .ts, .jsx, or .js.
+const savedVariant = /^(.*\.design-workbench\/ideas\/[^/]+\/[^/]+)\/component\.[jt]sx?$/;
+/** The files behind a design, for showing what each variant actually is. */
+export function designFiles(entry: WorkbenchEntry, design: DesignIdea): SourceFile[] {
+  if (design.files?.length) return design.files;
+  const folder = savedVariant.exec(design.source)?.[1];
+  if (folder) return [
+    { path: design.source, label: 'Variant code', description: `A copy of the source component, saved for this variant. Edit this file to change ${design.name}; your app is unchanged until you promote it.` },
+    { path: `${folder}/index.tsx`, label: 'Variant fixture', description: 'Renders the copy with the same properties and states as the source component.' },
+    { path: `${folder}/variant.json`, label: 'Variant info', description: 'The variant’s name, the source file it was copied from, and the version it started from. Promotion uses this to detect source changes.' },
+  ];
+  const files: SourceFile[] = [design.source === entry.source || design.kind !== 'exploration'
+    ? { path: design.source, label: 'App component', description: 'Your app’s component. Previews read it directly; DesignBench never edits it.' }
+    : { path: design.source, label: 'Exploration', description: 'An alternative registered in your catalog.' }];
+  // A fixture can be the source itself (catalog-only examples); list each file once.
+  if (entry.fixture && design.source === entry.source && entry.fixture !== design.source) files.push({ path: entry.fixture, label: 'Preview fixture', description: 'Renders the component for DesignBench with sample props, providers, and states.' });
+  return files;
 }
 export function resolveSelection(entries: WorkbenchEntry[], query: URLSearchParams): Selection {
   const entry = entries.find((item) => item.id === query.get('component')) ?? entries[0];

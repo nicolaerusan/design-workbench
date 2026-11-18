@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Workbench, resolveSelection, validateCatalog } from 'designbench';
+import { Workbench, resolveSelection, validateCatalog, describeView, describeCatalog } from 'designbench';
 import 'designbench/styles.css';
 
 const h = React.createElement;
@@ -53,6 +53,92 @@ function StartupFailure({ error }) {
       h('pre', { style: block }, upgrade)));
 }
 
+const scopeNote = 'Found by the last scan of your source folders. Run scan --write (or the Populate prompt in Settings) to refresh this list.';
+const fileUrl = file => '/' + file.split('/').map(encodeURIComponent).join('/');
+// "Use … in my app" in the Variants tab runs the same guarded promotion as `variant promote --apply`.
+const variantActions = {
+  promote: async (component, variant) => {
+    const response = await fetch('/__designbench/promote', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-DesignBench': '1' }, body: JSON.stringify({ component, variant }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'The variant could not be applied.');
+    return result;
+  },
+};
+
+/**
+ * Tells the dev server what this tab is showing, so an agent connected with `designbench mcp` can ask
+ * "what am I looking at?" and open a view here. Only names, ids and file paths are sent, and only to this server.
+ */
+function createReporter({ entries, project, coverage }) {
+  const tab = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  let view = null, sentCatalog = false, timer = 0, confirming, onAgent = () => {};
+  const report = async extra => {
+    const withCatalog = !sentCatalog;
+    sentCatalog = true;
+    // An agent's open request is confirmed by the next report, whichever change triggers it.
+    const ack = confirming;
+    confirming = undefined;
+    try {
+      const response = await fetch('/__designbench/view', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json', 'X-DesignBench': '1' },
+        body: JSON.stringify({ tab, ...(view ? { view: { ...describeView(entries, view, '/'), url: location.href } } : {}), ...(withCatalog ? { catalog: describeCatalog(project, entries, coverage) } : {}), ...(ack ? { ack } : {}), ...extra }) });
+      const result = await response.json();
+      // A restarted server has forgotten the catalog; the next report carries it again.
+      if (result.needsCatalog) sentCatalog = false;
+      onAgent(result.agent ?? null);
+    } catch { if (withCatalog) sentCatalog = false; }
+  };
+  // Reports settle for a moment first, so typing in a property field sends one update rather than one per key.
+  const schedule = (delay = 150) => { clearTimeout(timer); timer = setTimeout(report, delay); };
+  return {
+    viewChanged(next) { view = next; schedule(); },
+    /** Follows this tab's focus and the dev server's requests. Returns the cleanup. */
+    listen(setAgent) {
+      onAgent = setAgent;
+      // The tab the user returns to is the one an agent should act on.
+      const returned = () => { if (document.visibilityState === 'visible' && view) schedule(); };
+      const left = () => report({ closed: true });
+      window.addEventListener('focus', returned); document.addEventListener('visibilitychange', returned);
+      window.addEventListener('pageshow', returned); window.addEventListener('pagehide', left);
+      const open = ({ id, tab: target, search }) => {
+        if (target !== tab) return;
+        history.pushState(null, '', '/' + search);
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        // Confirm once the page has rendered the new view.
+        confirming = id;
+        schedule(60);
+      };
+      import.meta.hot?.on('designbench:open', open);
+      import.meta.hot?.on('designbench:agent', setAgent);
+      return () => {
+        onAgent = () => {};
+        window.removeEventListener('focus', returned); document.removeEventListener('visibilitychange', returned);
+        window.removeEventListener('pageshow', returned); window.removeEventListener('pagehide', left);
+        import.meta.hot?.off('designbench:open', open); import.meta.hot?.off('designbench:agent', setAgent);
+      };
+    },
+  };
+}
+/** The workbench with what the dev server adds: coverage, file access, switching variants, and the view report for agents. */
+function Shell({ entries, project, needsInit, setupCommand, projectRoot, discovered, version, update }) {
+  const [agent, setAgent] = React.useState(null);
+  // The catalog loads once per page, so these are worked out once.
+  const [host] = React.useState(() => {
+    // Coverage compares the last scan with the previews that exist now, so it updates as fixtures are added.
+    const previewedSources = new Set(entries.flatMap(entry => [entry.source, ...(entry.designs ?? []).map(design => design.source)]));
+    const coverage = discovered.map(source => ({ source, status: previewedSources.has(source) ? 'previewed' : 'missing' }));
+    // The Code tab reads project files through Vite (which applies its serving allow and deny lists)
+    // and opens them with Vite's editor launcher.
+    const sourceAccess = {
+      read: async file => (await import(/* @vite-ignore */ `${fileUrl(file)}?raw&t=${Date.now()}`)).default,
+      open: file => { fetch('/__open-in-editor?file=' + encodeURIComponent(projectRoot + '/' + file)).catch(() => {}); },
+    };
+    return { coverage, sourceAccess, reporter: createReporter({ entries, project, coverage }) };
+  });
+  React.useEffect(() => host.reporter.listen(setAgent), [host]);
+  return h(Workbench, { entries, project, projectId: project, basePath: '/', setupCommand, needsInit, version, update: update ?? undefined,
+    sourceAccess: host.sourceAccess, variantActions, coverage: host.coverage, scopeNote, onViewChange: host.reporter.viewChanged, agentConnection: agent });
+}
+
 class PreviewBoundary extends React.Component {
   state = { error: null };
   static getDerivedStateFromError(error) { return { error }; }
@@ -92,10 +178,10 @@ function ConnectionNotice({ setupCommand }) {
 
 const root = createRoot(document.getElementById('root'));
 // Imported here rather than at the top, so a catalog that fails to load is explained on the page.
-import('virtual:design-workbench').then(({ entries, renderPreview, project, needsInit, setupCommand, version, update }) => {
+import('virtual:design-workbench').then(({ entries, renderPreview, project, needsInit, setupCommand, projectRoot, discovered, version, update }) => {
   const errors = validateCatalog(entries);
   if (errors.length) root.render(h('pre', null, `Fix the catalog:\n${errors.join('\n')}`));
   else root.render(h(PreviewBoundary, null,
-    location.pathname === '/' ? h(React.Fragment, null, h(ConnectionNotice, { setupCommand }), h(Workbench, { entries, project, projectId: project, basePath: '/', setupCommand, needsInit, version, update: update ?? undefined })) : h(Preview, { entries, renderPreview })));
+    location.pathname === '/' ? h(React.Fragment, null, h(ConnectionNotice, { setupCommand }), h(Shell, { entries, project, needsInit, setupCommand, projectRoot, discovered, version, update })) : h(Preview, { entries, renderPreview })));
 }, error => root.render(h(StartupFailure, { error })));
 // Without an HMR acceptance boundary, Vite reloads the page on fixture edits.
