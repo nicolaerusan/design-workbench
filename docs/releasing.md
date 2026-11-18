@@ -35,7 +35,31 @@ commit and workflow that built it.
 
 The job stops before publishing if the tag does not match `package.json`, the
 commit is not on `main`, tests fail, or a shipped dependency has a high-severity
-advisory.
+advisory that is not deferred (see below).
+
+## Advisories with no fix
+
+CI and the release job run `node scripts/audit.mjs`, which audits the shipped
+dependencies and fails on any high or critical advisory. When an advisory has no
+fixed version to move to, it would otherwise block every release, including a
+security fix of our own. To defer one, add an entry to
+`scripts/audit-exceptions.json`:
+
+```json
+{
+  "advisory": "GHSA-xxxx-xxxx-xxxx",
+  "package": "the-affected-package",
+  "expires": "2026-12-02",
+  "reason": "Why shipping with it is acceptable until then."
+}
+```
+
+An entry covers one advisory in one package. It stops applying, and the audit
+fails again, when the date passes or as soon as `npm audit fix` can install a
+fixed version. The date can be at most 60 days away. Remove the entry once the
+fix is in `package-lock.json`; the audit prints a reminder while it is unused.
+Defer only when no fix exists and the reason holds for how DesignBench uses the
+package. Otherwise update the dependency.
 
 ## Withdrawing a release
 

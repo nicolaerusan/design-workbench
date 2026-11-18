@@ -38,5 +38,6 @@ jobs:
           cache: npm
       - run: npm ci --ignore-scripts
       # Only what ships to users. A new advisory fails this job, not the package job.
-      - run: npm audit --omit=dev --audit-level=high
+      # High and critical advisories fail, except the dated entries in scripts/audit-exceptions.json.
+      - run: node scripts/audit.mjs
       - run: npm audit signatures
